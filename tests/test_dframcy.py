@@ -12,7 +12,7 @@ dframcy = DframCy("en_core_web_sm")
 
 current_dir = os.path.dirname(os.path.realpath(__file__))
 project_root = "/" + "/".join(current_dir.split("/")[1:-1])
-data_dir = project_root + '/data/'
+data_dir = project_root + '/data'
 
 
 @pytest.mark.parametrize("text", ["I am here in USA."])
@@ -52,7 +52,7 @@ def test_all_columns_thoroughly():
                                            "like_email", "is_oov", "is_stop", "ancestors", "conjuncts", "children",
                                            "lefts", "rights", "n_lefts", "n_rights", "is_sent_start", "has_vector",
                                            "ent_start", "ent_end", "ent_label" "ents.label"])
-    with open(data_dir+"test.json", "r") as file:
+    with open(os.path.join(data_dir, "all_columns_results.json"), "r") as file:
         df_json = json.load(file)
     results = pd.DataFrame(df_json)
     assert_frame_equal(dataframe, results)
