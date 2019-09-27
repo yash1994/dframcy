@@ -1,5 +1,7 @@
+# coding: utf-8
+from __future__ import unicode_literals
+
 import spacy
-import types
 import pandas as pd
 from cytoolz import merge_with
 

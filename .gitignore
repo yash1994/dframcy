@@ -1,2 +1,5 @@
 *.pyc
 .idea/
+dframcy.egg-info/
+build/
+dist/
