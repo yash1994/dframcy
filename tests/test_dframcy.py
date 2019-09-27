@@ -1,11 +1,18 @@
 # coding: utf-8
 from __future__ import unicode_literals
 
+import os
 import pytest
+import json
 import pandas as pd
 from pandas.util.testing import assert_frame_equal
+from io import open
 from dframcy.dframcy import DframCy
 dframcy = DframCy("en_core_web_sm")
+
+current_dir = os.path.dirname(os.path.realpath(__file__))
+project_root = "/" + "/".join(current_dir.split("/")[1:-1])
+data_dir = project_root + '/data/'
 
 
 @pytest.mark.parametrize("text", ["I am here in USA."])
@@ -31,3 +38,22 @@ def test_default_columns(text):
         "tokens_text": ["I", "am", "here", "in", "USA", "."]
     })
     assert_frame_equal(dataframe, results)
+
+
+def test_all_columns_thoroughly():
+    doc = dframcy.nlp("Machine learning is an application of artificial intelligence (AI) that provides systems the "
+                      "ability to automatically learn and improve from experience without being explicitly "
+                      "programmed. Machine learning focuses on the development of computer programs that can access "
+                      "data and use it learn for themselves.")
+    dataframe = dframcy.to_dataframe(doc, ["id", "start", "end", "pos", "tag", "dep", "head", "text", "lemma", "lower",
+                                           "shape", "prefix", "suffix", "is_alpha", "is_ascii", "is_digit", "is_lower",
+                                           "is_upper", "is_title", "is_punct", "is_left_punct", "is_right_punct",
+                                           "is_space", "is_bracket", "is_quote", "is_currency", "like_url", "like_num",
+                                           "like_email", "is_oov", "is_stop", "ancestors", "conjuncts", "children",
+                                           "lefts", "rights", "n_lefts", "n_rights", "is_sent_start", "has_vector",
+                                           "ent_start", "ent_end", "ent_label" "ents.label"])
+    with open(data_dir+"test.json", "r") as file:
+        df_json = json.load(file)
+    results = pd.DataFrame(df_json)
+    assert_frame_equal(dataframe, results)
+

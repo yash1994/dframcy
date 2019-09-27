@@ -6,12 +6,12 @@ import warnings
 import pandas as pd
 from cytoolz import merge_with
 
+from dframcy import utils
+
 # reference:
 # https://stackoverflow.com/questions/40845304/runtimewarning-numpy-dtype-size-changed-may-indicate-binary-incompatibility
 warnings.filterwarnings('ignore', message='numpy.dtype size changed')
 warnings.filterwarnings('ignore', message='numpy.ufunc size changed')
-
-from dframcy import utils
 
 
 class DframCy(object):
