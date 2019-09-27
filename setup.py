@@ -33,5 +33,6 @@ setup(
     ],
     keywords=["spacy", "dataframe", "pandas"],
     packages=find_packages(),
-    install_requires=REQUIRES
+    install_requires=REQUIRES,
+    tests_require=['pytest']
 )

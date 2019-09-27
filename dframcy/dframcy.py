@@ -2,9 +2,14 @@
 from __future__ import unicode_literals
 
 import spacy
+import warnings
 import pandas as pd
 from cytoolz import merge_with
 
+# reference:
+# https://stackoverflow.com/questions/40845304/runtimewarning-numpy-dtype-size-changed-may-indicate-binary-incompatibility
+warnings.filterwarnings('ignore', message='numpy.dtype size changed')
+warnings.filterwarnings('ignore', message='numpy.ufunc size changed')
 
 from dframcy import utils
 
@@ -86,7 +91,7 @@ class DframCy(object):
 
         for key in merged_tokens_dict.keys():
             if key in set([i.split(".")[-1] for i in columns]):
-                columns_filtered_token_dict["tokens_"+key] = merged_tokens_dict[key]
+                columns_filtered_token_dict["tokens_" + key] = merged_tokens_dict[key]
 
         tokens_dataframe = pd.DataFrame.from_dict(columns_filtered_token_dict)
 
