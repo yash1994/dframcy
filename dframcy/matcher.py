@@ -18,25 +18,29 @@ class DframCyMatcher(object):
         for match_id, start, end in matches:
             if "match_id" not in df_format_json:
                 df_format_json["match_id"] = []
+                df_format_json["match_id"].append(match_id)
             else:
                 df_format_json["match_id"].append(match_id)
             if "start" not in df_format_json:
                 df_format_json["start"] = []
+                df_format_json["start"].append(start)
             else:
                 df_format_json["start"].append(start)
             if "end" not in df_format_json:
                 df_format_json["end"] = []
+                df_format_json["end"].append(end)
             else:
                 df_format_json["end"].append(end)
             if "string_id" not in df_format_json:
                 df_format_json["string_id"] = []
+                df_format_json["string_id"].append(self._nlp.vocab.strings[match_id])
             else:
                 df_format_json["string_id"].append(self._nlp.vocab.strings[match_id])
             if "span_text" not in df_format_json:
                 df_format_json["span_text"] = []
+                df_format_json["span_text"].append(doc[start:end].text)
             else:
                 df_format_json["span_text"].append(doc[start:end].text)
-
         matches_dataframe = pd.DataFrame.from_dict(df_format_json)
         matches_dataframe.reindex(matches_dataframe["match_id"])
         matches_dataframe.drop(columns=["match_id"], inplace=True)
@@ -68,8 +72,11 @@ class DframCyMatcher(object):
             self._nlp = self.create_nlp_pipeline()
         return Matcher(self._nlp.vocab)
 
-    def add(self, pattern_name, callback, pattern):
+    def add(self, pattern_name, callback, *pattern):
         if not self._matcher:
             self._matcher = self.get_matcher()
-        self._matcher.add(pattern_name, callback, pattern)
+        self._matcher.add(pattern_name, callback, *pattern)
+
+    def reset(self):
+        self._matcher = self.get_matcher()
 
