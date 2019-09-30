@@ -1,12 +1,12 @@
 # coding: utf-8
 from __future__ import unicode_literals
 
-import spacy
 import warnings
 import pandas as pd
 from cytoolz import merge_with
 
 from dframcy import utils
+from dframcy.language_model import LanguageModel
 
 # reference:
 # https://stackoverflow.com/questions/40845304/runtimewarning-numpy-dtype-size-changed-may-indicate-binary-incompatibility
@@ -14,25 +14,10 @@ warnings.filterwarnings('ignore', message='numpy.dtype size changed')
 warnings.filterwarnings('ignore', message='numpy.ufunc size changed')
 
 
-class DframCy(object):
+class DframCy(LanguageModel):
 
     def __init__(self, nlp_model):
-        self.nlp_model = nlp_model
-        self._nlp = None
-
-    def create_nlp_pipeline(self):
-        try:
-            nlp = spacy.load(self.nlp_model)
-        except IOError:
-            nlp = spacy.load("en")
-        return nlp
-
-    @property
-    def nlp(self):
-
-        if not self._nlp:
-            self._nlp = self.create_nlp_pipeline()
-        return self._nlp
+        super(DframCy, self).__init__(nlp_model)
 
     @staticmethod
     def get_additional_token_attributes(attribute, doc):

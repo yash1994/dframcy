@@ -3,13 +3,13 @@ from __future__ import unicode_literals
 
 import spacy
 import pandas as pd
+from dframcy.language_model import LanguageModel
 from spacy.matcher import Matcher, PhraseMatcher
 
 
-class DframCyMatcher(object):
+class DframCyMatcher(LanguageModel):
     def __init__(self, nlp_model):
-        self.nlp_model = nlp_model
-        self._nlp = None
+        super(DframCyMatcher, self).__init__(nlp_model)
         self._matcher = None
 
     def __call__(self, doc):
@@ -47,25 +47,8 @@ class DframCyMatcher(object):
 
         return matches_dataframe
 
-    def get_nlp(self):
-        return self._nlp
-
     def get_matcher_object(self):
         return self._matcher
-
-    @property
-    def nlp(self):
-
-        if not self._nlp:
-            self._nlp = self.create_nlp_pipeline()
-        return self._nlp
-
-    def create_nlp_pipeline(self):
-        try:
-            nlp = spacy.load(self.nlp_model)
-        except IOError:
-            nlp = spacy.load("en")
-        return nlp
 
     def get_matcher(self):
         if not self._nlp:
@@ -79,4 +62,9 @@ class DframCyMatcher(object):
 
     def reset(self):
         self._matcher = self.get_matcher()
+
+
+class DframCyPhraseMatcher(object):
+    def __init__(self, nlp_model):
+        super(DframCyPhraseMatcher, self).__init__(nlp_model)
 
