@@ -24,4 +24,6 @@ class LanguageModel(object):
         return self._nlp
 
     def get_nlp(self):
+        if not self._nlp:
+            self._nlp = self.create_nlp_pipeline()
         return self._nlp
