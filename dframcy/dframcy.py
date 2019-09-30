@@ -3,6 +3,7 @@ from __future__ import unicode_literals
 
 import warnings
 import pandas as pd
+from spacy.pipeline import EntityRuler
 from cytoolz import merge_with
 
 from dframcy import utils
@@ -40,7 +41,15 @@ class DframCy(LanguageModel):
             values = flattened_values
         return values
 
-    def to_dataframe(self, doc, columns=None):
+    @staticmethod
+    def get_named_entity_details(doc):
+        entity_details_dict = {"ent_text": [], "ent_label":[]}
+        for ent in doc.ents:
+            entity_details_dict["ent_text"].append(ent.text)
+            entity_details_dict["ent_label"].append(ent.label_)
+        return entity_details_dict
+
+    def to_dataframe(self, doc, columns=None, separate_entity_dframe=False):
 
         if not columns:
             columns = utils.get_default_columns()
@@ -55,6 +64,9 @@ class DframCy(LanguageModel):
 
         if "ent" in ", ".join(columns):
             json_doc = utils.merge_entity_details(json_doc)
+
+        if not json_doc["ents"]:
+            columns = [cn for cn in columns if "ents" not in cn]
 
         merged_tokens_dict = merge_with(list, *json_doc["tokens"])
         merged_tokens_dict["text"] = [json_doc["text"][token["start"]:token["end"]] for token in json_doc["tokens"]]
@@ -84,4 +96,15 @@ class DframCy(LanguageModel):
 
         tokens_dataframe.drop(columns=["tokens_id"], inplace=True)
 
-        return tokens_dataframe
+        if separate_entity_dframe:
+            entity_dict = self.get_named_entity_details(doc)
+            entity_dataframe = pd.DataFrame.from_dict(entity_dict)
+
+        return tokens_dataframe if not separate_entity_dframe else (tokens_dataframe, entity_dataframe)
+
+    def add_entity_ruler(self, patterns):
+        if not self._nlp:
+            self._nlp = self.create_nlp_pipeline()
+        ruler = EntityRuler(self._nlp)
+        ruler.add_patterns(patterns)
+        self._nlp.add_pipe(ruler)

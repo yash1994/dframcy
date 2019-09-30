@@ -131,7 +131,8 @@ def merge_entity_details(json_doc):
                 token_data["label"] = None
                 new_tokens_data_list.append(token_data)
         json_doc["tokens"] = new_tokens_data_list
-        del json_doc["ents"]
+        json_doc["ents"] = True
         return json_doc
     else:
+        json_doc["ents"] = False
         return json_doc

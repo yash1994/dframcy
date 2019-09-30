@@ -51,9 +51,20 @@ def test_all_columns_thoroughly():
                                            "is_space", "is_bracket", "is_quote", "is_currency", "like_url", "like_num",
                                            "like_email", "is_oov", "is_stop", "ancestors", "conjuncts", "children",
                                            "lefts", "rights", "n_lefts", "n_rights", "is_sent_start", "has_vector",
-                                           "ent_start", "ent_end", "ent_label" "ents.label"])
+                                           "ent_start", "ent_end", "ent_label"])
     with open(os.path.join(data_dir, "all_columns_results.json"), "r") as file:
         df_json = json.load(file)
     results = pd.DataFrame(df_json)
     assert_frame_equal(dataframe, results)
 
+
+def test_entity_rule_dataframe():
+    patterns = [{"label": "ORG", "pattern": "MyCorp Inc."}]
+    dframcy.add_entity_ruler(patterns)
+    doc = dframcy.nlp("MyCorp Inc. is a company in the U.S.")
+    _, entity_frame = dframcy.to_dataframe(doc, separate_entity_dframe=True)
+    results = pd.DataFrame({
+        "ent_text": ["MyCorp Inc.", "U.S."],
+        "ent_label": ["ORG", "GPE"]
+    })
+    assert_frame_equal(entity_frame, results)
