@@ -1,3 +1,6 @@
+from spacy.gold import biluo_tags_from_offsets, tags_to_entities
+
+
 def get_default_columns():
     return [
         'tokens.id',
@@ -14,7 +17,6 @@ def get_default_columns():
 
 
 def map_user_columns_names_with_default(user_columns):
-
     column_map = {
         "id": "tokens.id",
         "start": "tokens.start",
@@ -77,7 +79,6 @@ def map_user_columns_names_with_default(user_columns):
 
 
 def additional_attributes_map(column):
-
     attributes_map = {
         "tokens.lemma": ("lemma_", False, 0),
         "tokens.lower": ("lower_", False, 0),
@@ -136,3 +137,146 @@ def merge_entity_details(json_doc):
     else:
         json_doc["ents"] = False
         return json_doc
+
+
+def get_training_pipeline_from_column_names(columns):
+    columns = set(columns)
+    _all = {"text", "token_orth", "token_tag", "token_head", "token_dep", "entities"}
+    _only_tagger = {"text", "token_orth"}
+    _only_parser = {"text", "token_head"}
+    _only_ner = {"text", "entities"}
+    _tagger_and_parser = {"text", "token_orth", "token_tag", "token_head", "token_dep"}
+
+    if len(columns & _all) == len(_all):
+        return "tagger,parser,ner"
+    elif len(columns & _tagger_and_parser) == len(_tagger_and_parser):
+        return "tagger,parser"
+    elif len(columns & _only_tagger) == len(_only_tagger):
+        return "tagger"
+    elif len(columns & _only_parser) == len(_only_tagger):
+        return "parser"
+    elif len(columns & _only_ner) == len(_only_ner):
+        return "ner"
+    else:
+        return None
+
+
+def entity_offset_to_biluo_format(language_model, rows):
+    biluo_rows = []
+    for row in rows.iterrows():
+        doc = language_model.nlp(row["text"])
+        entities = row["entities"].split(", ")
+        tags = biluo_tags_from_offsets(doc, entities)
+        if entities:
+            for start, end, label in entities:
+                span = doc.char_span(start, end, label=label)
+                if span:
+                    doc.ents = list(doc.ents) + [span]
+        if doc.ents:
+            biluo_rows.append((doc, tags))
+    return biluo_rows
+
+
+def dataframe_to_spacy_training_json_format(dataframe, language_model, pipline):
+    pipline = pipline.split(",")
+    list_of_documents = []
+    biluo_rows = enumerate(language_model, dataframe)
+
+    for _id, biluo_row in enumerate(biluo_rows):
+        doc, tags = biluo_rows
+        doc_sentences = []
+        if "tagger" in pipline and "parser" in pipline and "ner" in pipline:
+            document_row = dataframe.iloc[[_id]]
+            token_orth = document_row["token_orth"].split(", ")
+            token_tag = document_row["token_tag"].split(", ")
+            token_head = document_row["token_head"].split(", ")
+            token_dep = document_row["token_dep"].split(", ")
+            tags_to_entities(tags)
+            for sentence in doc.sents:
+                sentence_tokens = []
+                for token_id, token in sentence:
+                    token_data = {
+                        "id": token_id,
+                        "orth": token_orth[token_id],
+                        "tag": token_tag[token_id],
+                        "head": token_head[token_id],
+                        "dep": token_dep[token_id],
+                        "ner": tags[token_id]
+                    }
+                    sentence_tokens.append(token_data)
+                doc_sentences.append({"tokens": sentence_tokens})
+        elif "tagger" in pipline and "parser" in pipline:
+            document_row = dataframe.iloc[[_id]]
+            token_orth = document_row["token_orth"].split(", ")
+            token_tag = document_row["token_tag"].split(", ")
+            token_head = document_row["token_head"].split(", ")
+            token_dep = document_row["token_dep"].split(", ")
+            for sentence in doc.sents:
+                sentence_tokens = []
+                for token_id, token in sentence:
+                    token_data = {
+                        "id": token_id,
+                        "orth": token_orth[token_id],
+                        "tag": token_tag[token_id],
+                        "head": token_head[token_id],
+                        "dep": token_dep[token_id]
+                    }
+                    sentence_tokens.append(token_data)
+                doc_sentences.append({"tokens": sentence_tokens})
+        elif "tagger" in pipline:
+            document_row = dataframe.iloc[[_id]]
+            token_orth = document_row["token_orth"].split(", ")
+            token_tag = document_row["token_tag"].split(", ")
+            for sentence in doc.sents:
+                sentence_tokens = []
+                for token_id, token in sentence:
+                    token_data = {
+                        "id": token_id,
+                        "orth": token_orth[token_id],
+                        "tag": token_tag[token_id],
+                        "head": token.head.i - token.i,
+                        "dep": token.dep_,
+                    }
+                    sentence_tokens.append(token_data)
+                doc_sentences.append({"tokens": sentence_tokens})
+        elif "parser" in pipline:
+            document_row = dataframe.iloc[[_id]]
+            token_head = document_row["token_head"].split(", ")
+            token_dep = document_row["token_dep"].split(", ")
+            for sentence in doc.sents:
+                sentence_tokens = []
+                for token_id, token in sentence:
+                    token_data = {
+                        "id": token_id,
+                        "orth": token.orth_,
+                        "tag": token.tag_,
+                        "head": token_head[token_id],
+                        "dep": token_dep[token_id]
+                    }
+                    sentence_tokens.append(token_data)
+                doc_sentences.append({"tokens": sentence_tokens})
+        elif "ner" in pipline:
+            for sentence in doc.sents:
+                sentence_tokens = []
+                for token in sentence:
+                    token_data = {
+                        "id": token.i,
+                        "orth": token.orth_,
+                        "tag": token.tag_,
+                        "head": token.head.i - token.i,
+                        "dep": token.dep_,
+                        "ner": tags[token.i]
+                    }
+                    sentence_tokens.append(token_data)
+                doc_sentences.append({"tokens": sentence_tokens})
+
+        list_of_documents.append({
+            "id": _id,
+            "paragraphs": [
+                {
+                    "raw": doc.text,
+                    "sentences": doc_sentences
+                }
+            ]
+        })
+    return list_of_documents

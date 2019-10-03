@@ -1,4 +1,5 @@
+python-magic
 pytest
-spacy==2.1.8
+spacy==2.2.0
 pandas==0.24.2
 cytoolz==0.9.0.1

@@ -30,7 +30,7 @@ def test_default_columns(text):
     results = pd.DataFrame({
         "tokens_start": [0, 2, 5, 10, 13, 16],
         "tokens_end": [1, 4, 9, 12, 16, 17],
-        "tokens_pos": ["PRON", "VERB", "ADV", "ADP", "PROPN", "PUNCT"],
+        "tokens_pos": ["PRON", "AUX", "ADV", "ADP", "PROPN", "PUNCT"],
         "tokens_tag": ["PRP", "VBP", "RB", "IN", "NNP", "."],
         "tokens_dep": ["nsubj", "ROOT", "advmod", "prep", "pobj", "punct"],
         "tokens_head": [1, 1, 1, 1, 3, 1],
