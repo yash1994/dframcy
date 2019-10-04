@@ -1,3 +1,4 @@
+from ast import literal_eval
 from spacy.gold import biluo_tags_from_offsets, tags_to_entities
 
 
@@ -161,45 +162,45 @@ def get_training_pipeline_from_column_names(columns):
         return None
 
 
-def entity_offset_to_biluo_format(language_model, rows):
+def entity_offset_to_biluo_format(nlp, rows):
     biluo_rows = []
     for row in rows.iterrows():
-        doc = language_model.nlp(row["text"])
-        entities = row["entities"].split(", ")
+        doc = nlp(row[1]["text"])
+        entities = literal_eval(row[1]["entities"])
         tags = biluo_tags_from_offsets(doc, entities)
         if entities:
             for start, end, label in entities:
                 span = doc.char_span(start, end, label=label)
-                if span:
+                if span and span not in doc.ents:
                     doc.ents = list(doc.ents) + [span]
         if doc.ents:
             biluo_rows.append((doc, tags))
     return biluo_rows
 
 
-def dataframe_to_spacy_training_json_format(dataframe, language_model, pipline):
+def dataframe_to_spacy_training_json_format(dataframe, nlp, pipline):
     pipline = pipline.split(",")
     list_of_documents = []
-    biluo_rows = enumerate(language_model, dataframe)
+    biluo_rows = entity_offset_to_biluo_format(nlp, dataframe)
 
     for _id, biluo_row in enumerate(biluo_rows):
-        doc, tags = biluo_rows
+        doc, tags = biluo_row
         doc_sentences = []
         if "tagger" in pipline and "parser" in pipline and "ner" in pipline:
             document_row = dataframe.iloc[[_id]]
-            token_orth = document_row["token_orth"].split(", ")
-            token_tag = document_row["token_tag"].split(", ")
-            token_head = document_row["token_head"].split(", ")
-            token_dep = document_row["token_dep"].split(", ")
+            token_orth = document_row["token_orth"].iloc[0].replace("'", "").split(", ")
+            token_tag = document_row["token_tag"].iloc[0].replace("'", "").split(", ")
+            token_head = document_row["token_head"].iloc[0].replace("'", "").split(", ")
+            token_dep = document_row["token_dep"].iloc[0].replace("'", "").split(", ")
             tags_to_entities(tags)
             for sentence in doc.sents:
                 sentence_tokens = []
-                for token_id, token in sentence:
+                for token_id, token in enumerate(sentence):
                     token_data = {
                         "id": token_id,
                         "orth": token_orth[token_id],
                         "tag": token_tag[token_id],
-                        "head": token_head[token_id],
+                        "head": int(token_head[token_id]),
                         "dep": token_dep[token_id],
                         "ner": tags[token_id]
                     }
@@ -207,10 +208,10 @@ def dataframe_to_spacy_training_json_format(dataframe, language_model, pipline):
                 doc_sentences.append({"tokens": sentence_tokens})
         elif "tagger" in pipline and "parser" in pipline:
             document_row = dataframe.iloc[[_id]]
-            token_orth = document_row["token_orth"].split(", ")
-            token_tag = document_row["token_tag"].split(", ")
-            token_head = document_row["token_head"].split(", ")
-            token_dep = document_row["token_dep"].split(", ")
+            token_orth = document_row["token_orth"].iloc[0].replace("'", "").split(", ")
+            token_tag = document_row["token_tag"].iloc[0].replace("'", "").split(", ")
+            token_head = document_row["token_head"].iloc[0].replace("'", "").split(", ")
+            token_dep = document_row["token_dep"].iloc[0].replace("'", "").split(", ")
             for sentence in doc.sents:
                 sentence_tokens = []
                 for token_id, token in sentence:
@@ -218,15 +219,15 @@ def dataframe_to_spacy_training_json_format(dataframe, language_model, pipline):
                         "id": token_id,
                         "orth": token_orth[token_id],
                         "tag": token_tag[token_id],
-                        "head": token_head[token_id],
+                        "head": int(token_head[token_id]),
                         "dep": token_dep[token_id]
                     }
                     sentence_tokens.append(token_data)
                 doc_sentences.append({"tokens": sentence_tokens})
         elif "tagger" in pipline:
             document_row = dataframe.iloc[[_id]]
-            token_orth = document_row["token_orth"].split(", ")
-            token_tag = document_row["token_tag"].split(", ")
+            token_orth = document_row["token_orth"].iloc[0].replace("'", "").split(", ")
+            token_tag = document_row["token_tag"].iloc[0].replace("'", "").split(", ")
             for sentence in doc.sents:
                 sentence_tokens = []
                 for token_id, token in sentence:
@@ -241,8 +242,8 @@ def dataframe_to_spacy_training_json_format(dataframe, language_model, pipline):
                 doc_sentences.append({"tokens": sentence_tokens})
         elif "parser" in pipline:
             document_row = dataframe.iloc[[_id]]
-            token_head = document_row["token_head"].split(", ")
-            token_dep = document_row["token_dep"].split(", ")
+            token_head = document_row["token_head"].iloc[0].replace("'", "").split(", ")
+            token_dep = document_row["token_dep"].iloc[0].replace("'", "").split(", ")
             for sentence in doc.sents:
                 sentence_tokens = []
                 for token_id, token in sentence:
@@ -250,7 +251,7 @@ def dataframe_to_spacy_training_json_format(dataframe, language_model, pipline):
                         "id": token_id,
                         "orth": token.orth_,
                         "tag": token.tag_,
-                        "head": token_head[token_id],
+                        "head": int(token_head[token_id]),
                         "dep": token_dep[token_id]
                     }
                     sentence_tokens.append(token_data)

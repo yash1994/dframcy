@@ -3,7 +3,9 @@ from __future__ import unicode_literals
 
 import os
 import magic
+import json
 import pandas as pd
+from spacy.cli.train import train
 
 from dframcy.dframcy import utils
 from dframcy.language_model import LanguageModel
@@ -15,6 +17,7 @@ class DframeTrainer(object):
                  output_path,
                  train_path,
                  dev_path,
+                 language_model="en_core_web_sm",
                  raw_text=None,
                  base_model=None,
                  pipeline="tagger,parser,ner",
@@ -42,6 +45,7 @@ class DframeTrainer(object):
         self.output_path = output_path
         self.train_path = train_path
         self.dev_path = dev_path
+        self.language_model = language_model
         self.raw_text = raw_text
         self.base_model = base_model
         self.pipeline = pipeline
@@ -65,7 +69,7 @@ class DframeTrainer(object):
         self.textcat_positive_label = textcat_positive_label
         self.verbose = verbose
         self.debug = debug
-        self.language_model = LanguageModel(self.lang).get_nlp()
+        self._nlp = LanguageModel(self.language_model).get_nlp()
 
     def convert(self):
         if os.path.exists(self.train_path):
@@ -82,5 +86,44 @@ class DframeTrainer(object):
 
             json_format = utils.dataframe_to_spacy_training_json_format(
                 training_data,
-                self.language_model,
+                self._nlp,
                 self.pipeline)
+
+            json_training_file_path = self.train_path.strip(".csv").strip(".xls") + ".json"
+
+            with open(json_training_file_path, "w") as file:
+                json.dump(json_format, file)
+
+            self.train_path = json_training_file_path
+            self.dev_path = json_training_file_path
+
+    def begin_training(self):
+        self.convert()
+        train(
+            self.lang,
+            self.output_path,
+            self.train_path,
+            self.dev_path,
+            self.raw_text,
+            self.base_model,
+            self.pipeline,
+            self.vectors,
+            self.n_iter,
+            self.n_early_stopping,
+            self.n_examples,
+            self.use_gpu,
+            self.version,
+            self.meta_path,
+            self.init_tok2vec,
+            self.parser_multitasks,
+            self.entity_multitasks,
+            self.noise_level,
+            self.orth_variant_level,
+            self.eval_beam_widths,
+            self.gold_preproc,
+            self.learn_tokens,
+            self.textcat_multilabel,
+            self.textcat_arch,
+            self.textcat_positive_label,
+            self.verbose,
+            self.debug)
