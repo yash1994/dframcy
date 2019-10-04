@@ -6,6 +6,11 @@ import magic
 import json
 import pandas as pd
 from spacy.cli.train import train
+from spacy.cli.debug_data import \
+    NEW_LABEL_THRESHOLD, \
+    DEP_LABEL_THRESHOLD, \
+    BLANK_MODEL_MIN_THRESHOLD, \
+    BLANK_MODEL_THRESHOLD
 
 from dframcy.dframcy import utils
 from dframcy.language_model import LanguageModel
@@ -70,6 +75,7 @@ class DframeTrainer(object):
         self.verbose = verbose
         self.debug = debug
         self._nlp = LanguageModel(self.language_model).get_nlp()
+        self.dataframe_shape = None
 
     def convert(self):
         if os.path.exists(self.train_path):
@@ -81,6 +87,7 @@ class DframeTrainer(object):
             else:
                 training_data = None
 
+            self.dataframe_shape = training_data.shape
             training_pipeline = utils.get_training_pipeline_from_column_names(training_data.columns)
             self.pipeline = training_pipeline if training_pipeline is not None else self.pipeline
 
@@ -98,7 +105,11 @@ class DframeTrainer(object):
             self.dev_path = json_training_file_path
 
     def begin_training(self):
+
         self.convert()
+        if not self.base_model and self.dataframe_shape[0] < BLANK_MODEL_THRESHOLD:
+            if self.dataframe_shape[0] < BLANK_MODEL_MIN_THRESHOLD:
+                self.base_model = "en_core_web_sm"
         train(
             self.lang,
             self.output_path,
