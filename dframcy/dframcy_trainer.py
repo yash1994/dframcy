@@ -7,12 +7,9 @@ import magic
 import json
 import pandas as pd
 from wasabi import Printer
+from pathlib import Path
 from spacy.cli.train import train
-from spacy.cli.debug_data import \
-    NEW_LABEL_THRESHOLD, \
-    DEP_LABEL_THRESHOLD, \
-    BLANK_MODEL_MIN_THRESHOLD, \
-    BLANK_MODEL_THRESHOLD
+from spacy.cli.debug_data import debug_data
 
 from dframcy.dframcy import utils
 from dframcy.language_model import LanguageModel
@@ -25,6 +22,7 @@ class DframeTrainer(object):
                  output_path,
                  train_path,
                  dev_path,
+                 debug_data_first=True,
                  language_model="en_core_web_sm",
                  raw_text=None,
                  base_model=None,
@@ -47,12 +45,12 @@ class DframeTrainer(object):
                  textcat_multilabel=False,
                  textcat_arch="bow",
                  textcat_positive_label=None,
-                 verbose=False,
-                 debug=False):
+                 verbose=False):
         self.lang = lang
         self.output_path = output_path
         self.train_path = train_path
         self.dev_path = dev_path
+        self.debug_data_first = debug_data_first
         self.language_model = language_model
         self.raw_text = raw_text
         self.base_model = base_model
@@ -76,7 +74,6 @@ class DframeTrainer(object):
         self.textcat_arch = textcat_arch
         self.textcat_positive_label = textcat_positive_label
         self.verbose = verbose
-        self.debug = debug
         self._nlp = LanguageModel(self.language_model).get_nlp()
         self.dataframe_shape = None
 
@@ -113,11 +110,15 @@ class DframeTrainer(object):
     def begin_training(self):
 
         self.convert()
-        if not self.base_model and self.dataframe_shape[0] < BLANK_MODEL_THRESHOLD:
-            if self.dataframe_shape[0] < BLANK_MODEL_MIN_THRESHOLD:
-                self.base_model = "en_core_web_sm"
-                messenger.warn("Low number of training samples ('{}') to train blank model, "
-                               "proceeding to train over '{}' model".format(self.dataframe_shape[0], self.base_model))
+        if self.debug_data_first:
+            debug_data(
+                self.lang,
+                Path(self.train_path),
+                Path(self.dev_path),
+                self.base_model,
+                self.pipeline
+            )
+
         train(
             self.lang,
             self.output_path,
