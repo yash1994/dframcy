@@ -19,12 +19,22 @@ messenger = Printer()
 
 
 class DframeConverter(object):
+    """
+    Base class to convert xls/csv training data format to spaCy's JSON format
+    (https://spacy.io/api/annotation#json-input).
+    """
     def __init__(self,
                  train_path,
                  dev_path,
                  language_model="en_core_web_sm",
                  pipeline="tagger,parser,ner"):
-
+        """
+        initialize JSON formatter.
+        :param train_path: str, file path or directory path containing multiple training data files
+        :param dev_path: str, file path or directory path containing multiple validation data files
+        :param language_model: str, language model to be used (default: "em_core_web_sm")
+        :param pipeline: str, training pipline (default: "tagger,parser,ner")
+        """
         self.train_path = train_path
         self.dev_path = dev_path
         self.dev_path = self.dev_path
@@ -33,6 +43,13 @@ class DframeConverter(object):
 
     @staticmethod
     def convert(data_path, nlp, data_type='training'):
+        """
+        To convert xls/csv training data to JSON format.
+        :param data_path: str, single file or multiple files (directory) to be converted
+        :param nlp: nlp pipeline object
+        :param data_type: str, type of data "training"/"validation" (default: "training")
+        :return: new JSON formatted file path, pipeline inferred from data
+        """
         if os.path.exists(data_path):
             if os.path.isfile(data_path):
                 if magic.from_file(data_path, mime=True) == 'text/plain' and data_path.endswith(".csv"):
@@ -73,6 +90,9 @@ class DframeConverter(object):
 
 
 class DframeTrainer(DframeConverter):
+    """
+    Wrapper class over spaCy's CLI training from CSV/XLS files.
+    """
     def __init__(self,
                  lang,
                  output_path,
@@ -101,6 +121,9 @@ class DframeTrainer(DframeConverter):
                  textcat_arch="bow",
                  textcat_positive_label=None,
                  verbose=False):
+        """
+        for parameters refer to: https://spacy.io/api/cli#train
+        """
         super(DframeTrainer, self).__init__(train_path, dev_path, pipeline=pipeline)
 
         self.lang = lang
@@ -147,6 +170,9 @@ class DframeTrainer(DframeConverter):
                                                                                        evaluation_pipeline), exits=-1)
 
     def begin_training(self):
+        """
+        To initiate training.
+        """
         if self.debug_data_first:
             debug_data(
                 self.lang,
@@ -186,6 +212,9 @@ class DframeTrainer(DframeConverter):
 
 
 class DframeEvaluator(DframeConverter):
+    """
+    Wrapper class over spaCy's CLI model evaluation from CSV/XLS files.
+    """
     def __init__(self,
                  model,
                  data_path,
@@ -194,6 +223,9 @@ class DframeEvaluator(DframeConverter):
                  displacy_path=None,
                  displacy_limit=25,
                  return_scores=False, ):
+        """
+        for parameters refer to: https://spacy.io/api/cli#evaluate
+        """
         super(DframeEvaluator, self).__init__(data_path, data_path)
 
         self.model = model
@@ -207,6 +239,9 @@ class DframeEvaluator(DframeConverter):
         self.data_path, pipeline = self.convert(self.data_path, self._nlp, "evaluation")
 
     def begin_evaluation(self):
+        """
+        To initiate evaluation.
+        """
         evaluate(
             self.model,
             self.data_path,

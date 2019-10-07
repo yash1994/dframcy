@@ -16,12 +16,22 @@ warnings.filterwarnings('ignore', message='numpy.ufunc size changed')
 
 
 class DframCy(LanguageModel):
-
+    """
+    Dataframe integration with spaCy's linguistic annotations.
+    """
     def __init__(self, nlp_model):
         super(DframCy, self).__init__(nlp_model)
 
     @staticmethod
     def get_additional_token_attributes(attribute, doc):
+        """
+        To get additional (token information other than doc.json()) token class attributes.
+        official doc: https://spacy.io/api/token
+        type: 0 for class attribute, 1 for class method, 2 for class property
+        :param attribute: tuple(name, type, is_nested) i.e. ("is_punct", 0, False)
+        :param doc: spacy container for linguistic annotations.
+        :return: list of or list of lists of attribute values
+        """
         _name = attribute[0]
         _type = attribute[2]
         _is_nested = attribute[1]
@@ -43,14 +53,27 @@ class DframCy(LanguageModel):
 
     @staticmethod
     def get_named_entity_details(doc):
-        entity_details_dict = {"ent_text": [], "ent_label":[]}
+        """
+        To get named entities from NLP processed text
+        :param doc: spacy container for linguistic annotations.
+        :return: dictionary containing entity_text and entity_label
+        """
+        entity_details_dict = {"ent_text": [], "ent_label": []}
         for ent in doc.ents:
             entity_details_dict["ent_text"].append(ent.text)
             entity_details_dict["ent_label"].append(ent.label_)
         return entity_details_dict
 
     def to_dataframe(self, doc, columns=None, separate_entity_dframe=False):
-
+        """
+        Convert Linguistic annotations for text into pandas dataframe
+        :param doc: spacy container for linguistic annotations.
+        :param columns: list of str, name of columns to be included in dataframe (default: ["tokens.id", "tokens.text",
+        "tokens.start", "tokens.end", "tokens.pos", "tokens.tag", "tokens.dep", "tokens.head", "ents.start",
+        "ents.end", "ents.label"])
+        :param separate_entity_dframe: bool, for separate entity dataframe (default: False)
+        :return: dataframe, dataframe containing linguistic annotations
+        """
         if not columns:
             columns = utils.get_default_columns()
             additional_attributes = False
@@ -99,10 +122,17 @@ class DframCy(LanguageModel):
         if separate_entity_dframe:
             entity_dict = self.get_named_entity_details(doc)
             entity_dataframe = pd.DataFrame.from_dict(entity_dict)
+        else:
+            entity_dataframe = None
 
         return tokens_dataframe if not separate_entity_dframe else (tokens_dataframe, entity_dataframe)
 
     def add_entity_ruler(self, patterns):
+        """
+        To add entity ruler in nlp pipeline
+        official doc: https://spacy.io/api/entityruler
+        :param patterns: list or list of lists of token/phrase based patterns
+        """
         if not self._nlp:
             self._nlp = self.create_nlp_pipeline()
         ruler = EntityRuler(self._nlp)

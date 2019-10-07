@@ -5,6 +5,10 @@ messenger = Printer()
 
 
 def get_default_columns():
+    """
+    To get list of columns names to be default in annotation dataframe.
+    :return: list of columns names.
+    """
     return [
         'tokens.id',
         'tokens.text',
@@ -20,6 +24,11 @@ def get_default_columns():
 
 
 def map_user_columns_names_with_default(user_columns):
+    """
+    To map user provided column names to specific format
+    :param user_columns: list, of user provided columns
+    :return: list, of specifically formatted column names
+    """
     column_map = {
         "id": "tokens.id",
         "start": "tokens.start",
@@ -83,6 +92,11 @@ def map_user_columns_names_with_default(user_columns):
 
 
 def additional_attributes_map(column):
+    """
+    To map column names of additional attributes to match spaCy's Token API.
+    :param column: list, of column names
+    :return: tuple, containing API info
+    """
     attributes_map = {
         "tokens.lemma": ("lemma_", False, 0),
         "tokens.lower": ("lower_", False, 0),
@@ -123,6 +137,11 @@ def additional_attributes_map(column):
 
 
 def merge_entity_details(json_doc):
+    """
+    To merge entity and token details provided by Doc.to_json() method.
+    :param json_doc: dictionary, returned by Doc.to_json()
+    :return: new dictionary
+    """
     if "ents" in json_doc and json_doc["ents"]:
         ents_dict = {str(ent["start"]) + "_" + str(ent["end"]): ent for ent in json_doc["ents"]}
 
@@ -144,6 +163,11 @@ def merge_entity_details(json_doc):
 
 
 def get_training_pipeline_from_column_names(columns):
+    """
+    To infer training pipeline from column names provided by training CSV/XLS.
+    :param columns: list, of input dataframe column names
+    :return: str, training pipeline
+    """
     columns = set(columns)
     _all = {"text", "token_orth", "token_tag", "token_head", "token_dep", "entities"}
     _only_tagger = {"text", "token_orth"}
@@ -164,6 +188,13 @@ def get_training_pipeline_from_column_names(columns):
 
 
 def entity_offset_to_biluo_format(nlp, rows, ner_train=False):
+    """
+    To convert entity offset (start, end) into BILUO format.
+    :param nlp: nlp pipeline
+    :param rows: dataframe rows (text)
+    :param ner_train: bool, true if ner data is provided in training file else false
+    :return: list of tuples, containing annotated text and entity tag info
+    """
     biluo_rows = []
     for row in rows.iterrows():
         doc = nlp(row[1]["text"])
@@ -183,6 +214,13 @@ def entity_offset_to_biluo_format(nlp, rows, ner_train=False):
 
 
 def dataframe_to_spacy_training_json_format(dataframe, nlp, pipline):
+    """
+    To convert dataframe into spaCy's CLI training JSON format.
+    :param dataframe: dataframe, training/validation data
+    :param nlp: nlp pipeline
+    :param pipline: str, training pipeline
+    :return: JSON object, containing training data
+    """
     pipline = pipline.split(",")
     list_of_documents = []
     biluo_rows = entity_offset_to_biluo_format(nlp, dataframe, ner_train=True if "ner" in pipline else False)

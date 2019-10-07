@@ -5,7 +5,13 @@ import spacy
 
 
 class LanguageModel(object):
+    """
+    Base class for language modelling tasks (annotation, training, matching and evaluation)
+    """
     def __init__(self, nlp_model):
+        """
+        :param nlp_model: name of language model to be used.
+        """
         self._nlp = None
         self.nlp_model = nlp_model
 
@@ -18,7 +24,9 @@ class LanguageModel(object):
 
     @property
     def nlp(self):
-
+        """
+        :return: nlp pipeline for linguistic annotations
+        """
         if not self._nlp:
             self._nlp = self.create_nlp_pipeline()
         return self._nlp
