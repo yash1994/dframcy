@@ -145,5 +145,4 @@ class DframeTrainer(object):
             self.textcat_multilabel,
             self.textcat_arch,
             self.textcat_positive_label,
-            self.verbose,
-            self.debug)
+            self.verbose)
