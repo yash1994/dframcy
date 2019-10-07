@@ -34,14 +34,30 @@ class DframeConverter(object):
     @staticmethod
     def convert(data_path, nlp, data_type='training'):
         if os.path.exists(data_path):
-            if magic.from_file(data_path, mime=True) == 'text/plain' and data_path.endswith(".csv"):
-                training_data = pd.read_csv(data_path)
-            elif "application/vnd" in magic.from_file(data_path, mime=True) and \
-                    (data_path.endswith(".xls") or data_path.endswith(".ods")):
-                training_data = pd.ExcelFile(data_path)
+            if os.path.isfile(data_path):
+                if magic.from_file(data_path, mime=True) == 'text/plain' and data_path.endswith(".csv"):
+                    training_data = pd.read_csv(data_path)
+                elif "application/vnd" in magic.from_file(data_path, mime=True) and \
+                        (data_path.endswith(".xls") or data_path.endswith(".ods")):
+                    training_data = pd.ExcelFile(data_path)
+                else:
+                    training_data = None
+                    messenger.fail("Unknown file format for {} data file:'{}'".format(data_type, data_path), exits=-1)
+            elif os.path.isdir(data_path):
+                dataframe_list = []
+                for file_name in os.listdir(data_path):
+                    file_path = os.path.join(data_path, file_name)
+                    if magic.from_file(file_path, mime=True) == 'text/plain' and file_path.endswith(".csv"):
+                        dataframe_list.append(pd.read_csv(file_path))
+                    elif "application/vnd" in magic.from_file(file_path, mime=True) and \
+                            (file_path.endswith(".xls") or file_path.endswith(".ods")):
+                        dataframe_list.append(pd.ExcelFile(file_path))
+                    else:
+                        messenger.warn("Unknown file format for {} data file:{}, skipping".format(data_type, file_path))
+                training_data = pd.concat(dataframe_list, join='inner', ignore_index=True)
             else:
                 training_data = None
-                messenger.fail("Unknown file format for {} data file:'{}'".format(data_type, data_path), exits=-1)
+
             training_pipeline = utils.get_training_pipeline_from_column_names(training_data.columns)
             json_format = utils.dataframe_to_spacy_training_json_format(
                 training_data,
@@ -53,7 +69,7 @@ class DframeConverter(object):
                 json.dump(json_format, file)
             return json_formatted_file_path, training_pipeline
         else:
-            messenger.fail("{} file path does not exist".format(data_type), exits=-1)
+            messenger.fail("{} file/directory path does not exist".format(data_type), exits=-1)
 
 
 class DframeTrainer(DframeConverter):
