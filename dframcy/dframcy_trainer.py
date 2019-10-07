@@ -31,34 +31,29 @@ class DframeConverter(object):
         self._nlp = LanguageModel(language_model).get_nlp()
         self.pipeline = pipeline
 
-    def convert(self):
-        if os.path.exists(self.train_path):
-            if magic.from_file(self.train_path, mime=True) == 'text/plain' and self.train_path.endswith(".csv"):
-                training_data = pd.read_csv(self.train_path)
-            elif "application/vnd" in magic.from_file(self.train_path, mime=True) and \
-                    (self.train_path.endswith(".xls") or self.train_path.endswith(".ods")):
-                training_data = pd.ExcelFile(self.train_path)
+    @staticmethod
+    def convert(data_path, nlp, data_type='training'):
+        if os.path.exists(data_path):
+            if magic.from_file(data_path, mime=True) == 'text/plain' and data_path.endswith(".csv"):
+                training_data = pd.read_csv(data_path)
+            elif "application/vnd" in magic.from_file(data_path, mime=True) and \
+                    (data_path.endswith(".xls") or data_path.endswith(".ods")):
+                training_data = pd.ExcelFile(data_path)
             else:
                 training_data = None
-                messenger.fail("Unknown file format for input file:'{}'".format(self.train_path), exits=-1)
-
+                messenger.fail("Unknown file format for {} data file:'{}'".format(data_type, data_path), exits=-1)
             training_pipeline = utils.get_training_pipeline_from_column_names(training_data.columns)
-            self.pipeline = training_pipeline if training_pipeline is not None else self.pipeline
-
             json_format = utils.dataframe_to_spacy_training_json_format(
                 training_data,
-                self._nlp,
-                self.pipeline)
+                nlp,
+                training_pipeline)
+            json_formatted_file_path = data_path.strip(".csv").strip(".xls") + ".json"
 
-            json_training_file_path = self.train_path.strip(".csv").strip(".xls") + ".json"
-
-            with io.open(json_training_file_path, "w") as file:
+            with io.open(json_formatted_file_path, "w") as file:
                 json.dump(json_format, file)
-
-            self.train_path = json_training_file_path
-            self.dev_path = json_training_file_path
+            return json_formatted_file_path, training_pipeline
         else:
-            messenger.fail("Training file path does not exist.", exits=-1)
+            messenger.fail("{} file path does not exist".format(data_type), exits=-1)
 
 
 class DframeTrainer(DframeConverter):
@@ -120,8 +115,22 @@ class DframeTrainer(DframeConverter):
         self.textcat_positive_label = textcat_positive_label
         self.verbose = verbose
 
+        if self.train_path != self.dev_path:
+            self.train_path, training_pipeline = self.convert(self.train_path, self._nlp, "training")
+            self.dev_path, evaluation_pipeline = self.convert(self.dev_path, self._nlp, "validation")
+        else:
+            messenger.warn("Same Training and validation data")
+            self.train_path, training_pipeline = self.convert(self.train_path, self._nlp, "training")
+            self.dev_path = self.train_path
+            evaluation_pipeline = training_pipeline
+
+        self.pipeline = training_pipeline if training_pipeline else self.pipeline
+        assert training_pipeline == evaluation_pipeline, messenger.fail("Training({}) and Evaluation({}) pipeline "
+                                                                        "does not "
+                                                                        "match".format(training_pipeline,
+                                                                                       evaluation_pipeline), exits=-1)
+
     def begin_training(self):
-        self.convert()
         if self.debug_data_first:
             debug_data(
                 self.lang,
@@ -168,23 +177,23 @@ class DframeEvaluator(DframeConverter):
                  gold_preproc=False,
                  displacy_path=None,
                  displacy_limit=25,
-                 return_scores=False,):
-
+                 return_scores=False, ):
         super(DframeEvaluator, self).__init__(data_path, data_path)
 
         self.model = model
-        self.train_path = data_path
+        self.data_path = data_path
         self.gpu_id = gpu_id
         self.gold_preproc = gold_preproc
         self.displacy_path = displacy_path
         self.displacy_limit = displacy_limit
         self.return_scores = return_scores
 
+        self.data_path, pipeline = self.convert(self.data_path, self._nlp, "evaluation")
+
     def begin_evaluation(self):
-        self.convert()
         evaluate(
             self.model,
-            self.train_path,
+            self.data_path,
             self.gpu_id,
             self.gold_preproc,
             self.displacy_path,
