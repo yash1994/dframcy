@@ -1,3 +1,4 @@
+wasabi
 python-magic
 pytest
 spacy==2.2.0

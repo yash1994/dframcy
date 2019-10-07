@@ -1,5 +1,7 @@
 from ast import literal_eval
 from spacy.gold import biluo_tags_from_offsets, tags_to_entities
+from wasabi import Printer
+messenger = Printer()
 
 
 def get_default_columns():
@@ -70,6 +72,7 @@ def map_user_columns_names_with_default(user_columns):
         try:
             user_defined_columns.append(column_map[uc])
         except KeyError:
+            messenger.fail("could not recognize given column name:'{}' so skipping it".format(uc))
             continue
 
     default_columns = get_default_columns()
@@ -150,8 +153,6 @@ def get_training_pipeline_from_column_names(columns):
 
     if len(columns & _all) == len(_all):
         return "tagger,parser,ner"
-    elif len(columns & _tagger_and_parser) == len(_tagger_and_parser):
-        return "tagger,parser"
     elif len(columns & _only_tagger) == len(_only_tagger):
         return "tagger"
     elif len(columns & _only_parser) == len(_only_tagger):
@@ -162,26 +163,29 @@ def get_training_pipeline_from_column_names(columns):
         return None
 
 
-def entity_offset_to_biluo_format(nlp, rows):
+def entity_offset_to_biluo_format(nlp, rows, ner_train=False):
     biluo_rows = []
     for row in rows.iterrows():
         doc = nlp(row[1]["text"])
-        entities = literal_eval(row[1]["entities"])
-        tags = biluo_tags_from_offsets(doc, entities)
-        if entities:
-            for start, end, label in entities:
-                span = doc.char_span(start, end, label=label)
-                if span and span not in doc.ents:
-                    doc.ents = list(doc.ents) + [span]
-        if doc.ents:
-            biluo_rows.append((doc, tags))
+        if ner_train:
+            entities = literal_eval(row[1]["entities"])
+            tags = biluo_tags_from_offsets(doc, entities)
+            if entities:
+                for start, end, label in entities:
+                    span = doc.char_span(start, end, label=label)
+                    if span and span not in doc.ents:
+                        doc.ents = list(doc.ents) + [span]
+            if doc.ents:
+                biluo_rows.append((doc, tags))
+        else:
+            biluo_rows.append((doc, None))
     return biluo_rows
 
 
 def dataframe_to_spacy_training_json_format(dataframe, nlp, pipline):
     pipline = pipline.split(",")
     list_of_documents = []
-    biluo_rows = entity_offset_to_biluo_format(nlp, dataframe)
+    biluo_rows = entity_offset_to_biluo_format(nlp, dataframe, ner_train=True if "ner" in pipline else False)
 
     for _id, biluo_row in enumerate(biluo_rows):
         doc, tags = biluo_row
@@ -195,6 +199,12 @@ def dataframe_to_spacy_training_json_format(dataframe, nlp, pipline):
             tags_to_entities(tags)
             for sentence in doc.sents:
                 sentence_tokens = []
+
+                assert len(sentence) <= len(token_orth), messenger.fail("number of token and token_orth field mismatch")
+                assert len(sentence) <= len(token_tag), messenger.fail("number of token and token_tag field mismatch")
+                assert len(sentence) <= len(token_head), messenger.fail("number of token and token_head field mismatch")
+                assert len(sentence) <= len(token_dep), messenger.fail("number of token and token_dep field mismatch")
+
                 for token_id, token in enumerate(sentence):
                     token_data = {
                         "id": token_id,
@@ -206,37 +216,21 @@ def dataframe_to_spacy_training_json_format(dataframe, nlp, pipline):
                     }
                     sentence_tokens.append(token_data)
                 doc_sentences.append({"tokens": sentence_tokens})
-        elif "tagger" in pipline and "parser" in pipline:
-            document_row = dataframe.iloc[[_id]]
-            token_orth = document_row["token_orth"].iloc[0].replace("'", "").split(", ")
-            token_tag = document_row["token_tag"].iloc[0].replace("'", "").split(", ")
-            token_head = document_row["token_head"].iloc[0].replace("'", "").split(", ")
-            token_dep = document_row["token_dep"].iloc[0].replace("'", "").split(", ")
-            for sentence in doc.sents:
-                sentence_tokens = []
-                for token_id, token in sentence:
-                    token_data = {
-                        "id": token_id,
-                        "orth": token_orth[token_id],
-                        "tag": token_tag[token_id],
-                        "head": int(token_head[token_id]),
-                        "dep": token_dep[token_id]
-                    }
-                    sentence_tokens.append(token_data)
-                doc_sentences.append({"tokens": sentence_tokens})
         elif "tagger" in pipline:
             document_row = dataframe.iloc[[_id]]
             token_orth = document_row["token_orth"].iloc[0].replace("'", "").split(", ")
             token_tag = document_row["token_tag"].iloc[0].replace("'", "").split(", ")
             for sentence in doc.sents:
                 sentence_tokens = []
-                for token_id, token in sentence:
+
+                assert len(sentence) <= len(token_orth), messenger.fail("number of token and token_orth field mismatch")
+                assert len(sentence) <= len(token_tag), messenger.fail("number of token and token_tag field mismatch")
+
+                for token_id, token in enumerate(sentence):
                     token_data = {
                         "id": token_id,
                         "orth": token_orth[token_id],
-                        "tag": token_tag[token_id],
-                        "head": token.head.i - token.i,
-                        "dep": token.dep_,
+                        "tag": token_tag[token_id]
                     }
                     sentence_tokens.append(token_data)
                 doc_sentences.append({"tokens": sentence_tokens})
@@ -246,9 +240,13 @@ def dataframe_to_spacy_training_json_format(dataframe, nlp, pipline):
             token_dep = document_row["token_dep"].iloc[0].replace("'", "").split(", ")
             for sentence in doc.sents:
                 sentence_tokens = []
-                for token_id, token in sentence:
+
+                assert len(sentence) <= len(token_head), messenger.fail("number of token and token_head field mismatch")
+                assert len(sentence) <= len(token_dep), messenger.fail("number of token and token_dep field mismatch")
+
+                for token_id, token in enumerate(sentence):
                     token_data = {
-                        "id": token_id,
+                        "id": token.i,
                         "orth": token.orth_,
                         "tag": token.tag_,
                         "head": int(token_head[token_id]),

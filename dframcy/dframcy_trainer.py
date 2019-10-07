@@ -2,9 +2,11 @@
 from __future__ import unicode_literals
 
 import os
+import io
 import magic
 import json
 import pandas as pd
+from wasabi import Printer
 from spacy.cli.train import train
 from spacy.cli.debug_data import \
     NEW_LABEL_THRESHOLD, \
@@ -14,6 +16,7 @@ from spacy.cli.debug_data import \
 
 from dframcy.dframcy import utils
 from dframcy.language_model import LanguageModel
+messenger = Printer()
 
 
 class DframeTrainer(object):
@@ -86,6 +89,7 @@ class DframeTrainer(object):
                 training_data = pd.ExcelFile(self.train_path)
             else:
                 training_data = None
+                messenger.fail("Unknown file format for input file:'{}'".format(self.train_path), exits=-1)
 
             self.dataframe_shape = training_data.shape
             training_pipeline = utils.get_training_pipeline_from_column_names(training_data.columns)
@@ -98,11 +102,13 @@ class DframeTrainer(object):
 
             json_training_file_path = self.train_path.strip(".csv").strip(".xls") + ".json"
 
-            with open(json_training_file_path, "w") as file:
+            with io.open(json_training_file_path, "w") as file:
                 json.dump(json_format, file)
 
             self.train_path = json_training_file_path
             self.dev_path = json_training_file_path
+        else:
+            messenger.fail("Training file path does not exist.", exits=-1)
 
     def begin_training(self):
 
@@ -110,6 +116,8 @@ class DframeTrainer(object):
         if not self.base_model and self.dataframe_shape[0] < BLANK_MODEL_THRESHOLD:
             if self.dataframe_shape[0] < BLANK_MODEL_MIN_THRESHOLD:
                 self.base_model = "en_core_web_sm"
+                messenger.warn("Low number of training samples ('{}') to train blank model, "
+                               "proceeding to train over '{}' model".format(self.dataframe_shape[0], self.base_model))
         train(
             self.lang,
             self.output_path,
