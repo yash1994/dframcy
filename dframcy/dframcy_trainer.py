@@ -10,20 +10,64 @@ from wasabi import Printer
 from pathlib import Path
 from spacy.cli.train import train
 from spacy.cli.debug_data import debug_data
+from spacy.cli.evaluate import evaluate
 
 from dframcy.dframcy import utils
 from dframcy.language_model import LanguageModel
+
 messenger = Printer()
 
 
-class DframeTrainer(object):
+class DframeConverter(object):
+    def __init__(self,
+                 train_path,
+                 dev_path,
+                 language_model="en_core_web_sm",
+                 pipeline="tagger,parser,ner"):
+
+        self.train_path = train_path
+        self.dev_path = dev_path
+        self.dev_path = self.dev_path
+        self._nlp = LanguageModel(language_model).get_nlp()
+        self.pipeline = pipeline
+
+    def convert(self):
+        if os.path.exists(self.train_path):
+            if magic.from_file(self.train_path, mime=True) == 'text/plain' and self.train_path.endswith(".csv"):
+                training_data = pd.read_csv(self.train_path)
+            elif "application/vnd" in magic.from_file(self.train_path, mime=True) and \
+                    (self.train_path.endswith(".xls") or self.train_path.endswith(".ods")):
+                training_data = pd.ExcelFile(self.train_path)
+            else:
+                training_data = None
+                messenger.fail("Unknown file format for input file:'{}'".format(self.train_path), exits=-1)
+
+            training_pipeline = utils.get_training_pipeline_from_column_names(training_data.columns)
+            self.pipeline = training_pipeline if training_pipeline is not None else self.pipeline
+
+            json_format = utils.dataframe_to_spacy_training_json_format(
+                training_data,
+                self._nlp,
+                self.pipeline)
+
+            json_training_file_path = self.train_path.strip(".csv").strip(".xls") + ".json"
+
+            with io.open(json_training_file_path, "w") as file:
+                json.dump(json_format, file)
+
+            self.train_path = json_training_file_path
+            self.dev_path = json_training_file_path
+        else:
+            messenger.fail("Training file path does not exist.", exits=-1)
+
+
+class DframeTrainer(DframeConverter):
     def __init__(self,
                  lang,
                  output_path,
                  train_path,
                  dev_path,
                  debug_data_first=True,
-                 language_model="en_core_web_sm",
                  raw_text=None,
                  base_model=None,
                  pipeline="tagger,parser,ner",
@@ -46,12 +90,13 @@ class DframeTrainer(object):
                  textcat_arch="bow",
                  textcat_positive_label=None,
                  verbose=False):
+        super(DframeTrainer, self).__init__(train_path, dev_path, pipeline=pipeline)
+
         self.lang = lang
         self.output_path = output_path
         self.train_path = train_path
         self.dev_path = dev_path
         self.debug_data_first = debug_data_first
-        self.language_model = language_model
         self.raw_text = raw_text
         self.base_model = base_model
         self.pipeline = pipeline
@@ -74,41 +119,8 @@ class DframeTrainer(object):
         self.textcat_arch = textcat_arch
         self.textcat_positive_label = textcat_positive_label
         self.verbose = verbose
-        self._nlp = LanguageModel(self.language_model).get_nlp()
-        self.dataframe_shape = None
-
-    def convert(self):
-        if os.path.exists(self.train_path):
-            if magic.from_file(self.train_path, mime=True) == 'text/plain' and self.train_path.endswith(".csv"):
-                training_data = pd.read_csv(self.train_path)
-            elif "application/vnd" in magic.from_file(self.train_path, mime=True) and \
-                    (self.train_path.endswith(".xls") or self.train_path.endswith(".ods")):
-                training_data = pd.ExcelFile(self.train_path)
-            else:
-                training_data = None
-                messenger.fail("Unknown file format for input file:'{}'".format(self.train_path), exits=-1)
-
-            self.dataframe_shape = training_data.shape
-            training_pipeline = utils.get_training_pipeline_from_column_names(training_data.columns)
-            self.pipeline = training_pipeline if training_pipeline is not None else self.pipeline
-
-            json_format = utils.dataframe_to_spacy_training_json_format(
-                training_data,
-                self._nlp,
-                self.pipeline)
-
-            json_training_file_path = self.train_path.strip(".csv").strip(".xls") + ".json"
-
-            with io.open(json_training_file_path, "w") as file:
-                json.dump(json_format, file)
-
-            self.train_path = json_training_file_path
-            self.dev_path = json_training_file_path
-        else:
-            messenger.fail("Training file path does not exist.", exits=-1)
 
     def begin_training(self):
-
         self.convert()
         if self.debug_data_first:
             debug_data(
@@ -146,3 +158,36 @@ class DframeTrainer(object):
             self.textcat_arch,
             self.textcat_positive_label,
             self.verbose)
+
+
+class DframeEvaluator(DframeConverter):
+    def __init__(self,
+                 model,
+                 data_path,
+                 gpu_id=-1,
+                 gold_preproc=False,
+                 displacy_path=None,
+                 displacy_limit=25,
+                 return_scores=False,):
+
+        super(DframeEvaluator, self).__init__(data_path, data_path)
+
+        self.model = model
+        self.train_path = data_path
+        self.gpu_id = gpu_id
+        self.gold_preproc = gold_preproc
+        self.displacy_path = displacy_path
+        self.displacy_limit = displacy_limit
+        self.return_scores = return_scores
+
+    def begin_evaluation(self):
+        self.convert()
+        evaluate(
+            self.model,
+            self.train_path,
+            self.gpu_id,
+            self.gold_preproc,
+            self.displacy_path,
+            self.displacy_limit,
+            self.return_scores
+        )
