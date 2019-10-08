@@ -1,18 +1,12 @@
 # coding: utf-8
 from __future__ import unicode_literals
 
-import warnings
 import pandas as pd
 from spacy.pipeline import EntityRuler
 from cytoolz import merge_with
 
 from dframcy import utils
 from dframcy.language_model import LanguageModel
-
-# reference:
-# https://stackoverflow.com/questions/40845304/runtimewarning-numpy-dtype-size-changed-may-indicate-binary-incompatibility
-warnings.filterwarnings('ignore', message='numpy.dtype size changed')
-warnings.filterwarnings('ignore', message='numpy.ufunc size changed')
 
 
 class DframCy(LanguageModel):

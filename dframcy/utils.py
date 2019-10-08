@@ -187,29 +187,32 @@ def get_training_pipeline_from_column_names(columns):
         return None
 
 
-def entity_offset_to_biluo_format(nlp, rows, ner_train=False):
+def entity_offset_to_biluo_format(nlp, rows, pipline):
     """
     To convert entity offset (start, end) into BILUO format.
     :param nlp: nlp pipeline
     :param rows: dataframe rows (text)
-    :param ner_train: bool, true if ner data is provided in training file else false
+    :param pipline: list, training pipline inferred from data
     :return: list of tuples, containing annotated text and entity tag info
     """
     biluo_rows = []
-    for row in rows.iterrows():
-        doc = nlp(row[1]["text"])
-        if ner_train:
-            entities = literal_eval(row[1]["entities"])
-            tags = biluo_tags_from_offsets(doc, entities)
-            if entities:
-                for start, end, label in entities:
-                    span = doc.char_span(start, end, label=label)
-                    if span and span not in doc.ents:
-                        doc.ents = list(doc.ents) + [span]
-            if doc.ents:
-                biluo_rows.append((doc, tags))
-        else:
-            biluo_rows.append((doc, None))
+    default_pipline = ["tagger", "ner"]
+    disabled_components = tuple(set(default_pipline) & set(pipline))
+    with nlp.disable_pipes(*disabled_components):
+        for row in rows.iterrows():
+            doc = nlp(row[1]["text"])
+            if "ner" in pipline:
+                entities = literal_eval(row[1]["entities"])
+                tags = biluo_tags_from_offsets(doc, entities)
+                if entities:
+                    for start, end, label in entities:
+                        span = doc.char_span(start, end, label=label)
+                        if span and span not in doc.ents:
+                            doc.ents = list(doc.ents) + [span]
+                if doc.ents:
+                    biluo_rows.append((doc, tags))
+            else:
+                biluo_rows.append((doc, None))
     return biluo_rows
 
 
@@ -223,7 +226,7 @@ def dataframe_to_spacy_training_json_format(dataframe, nlp, pipline):
     """
     pipline = pipline.split(",")
     list_of_documents = []
-    biluo_rows = entity_offset_to_biluo_format(nlp, dataframe, ner_train=True if "ner" in pipline else False)
+    biluo_rows = entity_offset_to_biluo_format(nlp, dataframe, pipline)
 
     for _id, biluo_row in enumerate(biluo_rows):
         doc, tags = biluo_row
