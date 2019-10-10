@@ -12,7 +12,7 @@ with open(path.join(here, "requirements.txt"), encoding="utf-8") as f:
 
 setup(
     name="dframcy",
-    version="0.0.1",
+    version="0.1",
     description="Pandas Dataframe integration for spaCy",
     long_description=long_description,
     long_description_content_type="text/markdown",
@@ -21,21 +21,16 @@ setup(
     author_email="yash@patadia.org",
     classifiers=[
         "Development Status :: 3 - Alpha",
-
-        # Indicate who your project is intended for
         "Intended Audience :: Developers",
         "Topic :: Software Development :: Build Tools",
-
-        # Pick your license as you wish
         "License :: OSI Approved :: MIT License",
-
-        "Programming Language :: Python :: 3.6"
+        "Programming Language :: Python :: 3.6",
     ],
     keywords=["spacy", "dataframe", "pandas"],
     packages=find_packages(),
     install_requires=REQUIRES,
     tests_require=['pytest'],
     entry_points={
-        'console_scripts': ["dframcy=dframcy.cli:main"],
+        "console_scripts": ["dframcy=dframcy.cli:main"],
     }
 )
