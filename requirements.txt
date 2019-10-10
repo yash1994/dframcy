@@ -1,3 +1,4 @@
+click
 wasabi
 python-magic
 pytest
