@@ -8,6 +8,7 @@ from wasabi import Printer
 from io import open
 from .dframcy import DframCy
 from .utils import get_default_columns
+from .trainer import DframeTrainer, DframeEvaluator
 
 messenger = Printer()
 DEFAULT_COLUMNS = ",".join(get_default_columns())
@@ -64,6 +65,116 @@ def convert(input_file, output_file, convert_type, language_model, columns, sepa
                 messenger.fail("Unknown output file format '{}'".format(convert_type), exits=-1)
     else:
         messenger.fail("input path {} does not exist".format(input_file), exits=-1)
+
+
+@main.command()
+@click.option("--lang", "-l", required=True, type=str, help="Model language.")
+@click.option("--output_path", "-o", required=True, type=str, help="Output directory to store mode in.")
+@click.option("--train_path", "-t", required=True, type=str, help="Path of CSV containing training data.")
+@click.option("--dev_path", "-d", required=True, type=str, help="Path to CSV containing validation data")
+@click.option("--debug_data_first", "-debug", default=True, show_default=True, type=bool, help="Run spaCy's training "
+                                                                                               "data debugger before "
+                                                                                               "training")
+@click.option("--raw_text", "-rt", default=None, show_default=True, type=str, help="Path to jsonl file with unlabelled "
+                                                                                   "text documents.")
+@click.option("--base_model", "-b", default=None, show_default=True, type=str, help="Name of model to update")
+@click.option("--pipeline", "-p", default="tagger,parser,ner", show_default=True, type=str, help="Comma-separated "
+                                                                                                 "names of pipeline "
+                                                                                                 "components")
+@click.option("--vectors", "-v", default=None, show_default=True, type=str, help="Model to load vectors from")
+@click.option("--n_iter", "-n", default=30, show_default=True, type=int, help="Number of iterations")
+@click.option("--n_early_stopping", "-ne", default=None, show_default=True, type=int, help="Maximum number of "
+                                                                                           "training epochs without "
+                                                                                           "dev accuracy improvement")
+@click.option("--n_examples", "-ns", default=0, show_default=True, type=int, help="Number of examples")
+@click.option("--use_gpu", "-g", default=-1, show_default=True, type=int, help="Use GPU")
+@click.option("--version", "-v", default="0.0.0", show_default=True, type=str, help="Model version")
+@click.option("--meta_path", "-m", default=None, show_default=True, type=Path, help="Optional path to meta.json to "
+                                                                                    "use as base.")
+@click.option("--init_tok2vec", "-t2v", default=None, show_default=True, type=str, help="Path to pretrained weights "
+                                                                                        "for the token-to-vector "
+                                                                                        "parts of the models")
+@click.option("--parser_multitasks", "-pm", default="", show_default=True, type=str, help="Side objectives for parser "
+                                                                                          "CNN, e.g. 'dep' or 'dep,"
+                                                                                          "tag'")
+@click.option("--entity_multitasks", "-em", default="", show_default=True, type=str, help="Side objectives for NER "
+                                                                                          "CNN, e.g. 'dep' or 'dep,"
+                                                                                          "tag'")
+@click.option("--noise_level", "-n", default=0.0, show_default=True, type=float, help="Amount of corruption for data "
+                                                                                      "augmentation")
+@click.option("--orth_variant_level", "-vl", default=0.0, show_default=True, type=float, help="Amount of orthography "
+                                                                                              "variation for data "
+                                                                                              "augmentation")
+@click.option("--eval_beam_widths", "-bw", default="", show_default=True, type=str, help="Beam widths to evaluate, "
+                                                                                         "e.g. 4,8")
+@click.option("--gold_preproc", "-G", default=False, show_default=True, type=bool, help="Use gold preprocessing")
+@click.option("--learn_tokens", "-T", default=False, show_default=True, type=bool, help="Make parser learn "
+                                                                                        "gold-standard tokenization")
+@click.option("--textcat_multilabel", "-TML", default=False, show_default=True, type=bool, help="Textcat classes "
+                                                                                                "aren't mutually "
+                                                                                                "exclusive ("
+                                                                                                "multilabel)")
+@click.option("--textcat_arch", "-ta", default="bow", show_default=True, type=str, help="Textcat model architecture")
+@click.option("--textcat_positive_label", "-tpl", default=None, show_default=True, type=str, help="Textcat positive "
+                                                                                                  "label for binary "
+                                                                                                  "classes with two "
+                                                                                                  "labels")
+@click.option("--verbose", "-VV", default=False, show_default=True, type=bool, help="verbosity")
+def train(lang,
+          output_path,
+          train_path,
+          dev_path,
+          debug_data_first,
+          raw_text,
+          base_model,
+          pipeline,
+          vectors,
+          n_iter,
+          n_early_stopping,
+          n_examples,
+          use_gpu,
+          version,
+          meta_path,
+          init_tok2vec,
+          parser_multitasks,
+          entity_multitasks,
+          noise_level,
+          orth_variant_level,
+          eval_beam_widths,
+          gold_preproc,
+          learn_tokens,
+          textcat_multilabel,
+          textcat_arch,
+          textcat_positive_label,
+          verbose):
+    dframe_trainer = DframeTrainer(lang,
+                                   output_path,
+                                   train_path,
+                                   dev_path,
+                                   debug_data_first,
+                                   raw_text,
+                                   base_model,
+                                   pipeline,
+                                   vectors,
+                                   n_iter,
+                                   n_early_stopping,
+                                   n_examples,
+                                   use_gpu,
+                                   version,
+                                   meta_path,
+                                   init_tok2vec,
+                                   parser_multitasks,
+                                   entity_multitasks,
+                                   noise_level,
+                                   orth_variant_level,
+                                   eval_beam_widths,
+                                   gold_preproc,
+                                   learn_tokens,
+                                   textcat_multilabel,
+                                   textcat_arch,
+                                   textcat_positive_label,
+                                   verbose)
+    dframe_trainer.begin_training()
 
 
 if __name__ == '__main__':
