@@ -222,7 +222,7 @@ class DframeEvaluator(DframeConverter):
                  gold_preproc=False,
                  displacy_path=None,
                  displacy_limit=25,
-                 return_scores=False, ):
+                 return_scores=False):
         """
         for parameters refer to: https://spacy.io/api/cli#evaluate
         """

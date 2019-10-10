@@ -120,33 +120,34 @@ def convert(input_file, output_file, convert_type, language_model, columns, sepa
                                                                                                   "classes with two "
                                                                                                   "labels")
 @click.option("--verbose", "-VV", default=False, show_default=True, type=bool, help="verbosity")
-def train(lang,
-          output_path,
-          train_path,
-          dev_path,
-          debug_data_first,
-          raw_text,
-          base_model,
-          pipeline,
-          vectors,
-          n_iter,
-          n_early_stopping,
-          n_examples,
-          use_gpu,
-          version,
-          meta_path,
-          init_tok2vec,
-          parser_multitasks,
-          entity_multitasks,
-          noise_level,
-          orth_variant_level,
-          eval_beam_widths,
-          gold_preproc,
-          learn_tokens,
-          textcat_multilabel,
-          textcat_arch,
-          textcat_positive_label,
-          verbose):
+def train(
+        lang,
+        output_path,
+        train_path,
+        dev_path,
+        debug_data_first,
+        raw_text,
+        base_model,
+        pipeline,
+        vectors,
+        n_iter,
+        n_early_stopping,
+        n_examples,
+        use_gpu,
+        version,
+        meta_path,
+        init_tok2vec,
+        parser_multitasks,
+        entity_multitasks,
+        noise_level,
+        orth_variant_level,
+        eval_beam_widths,
+        gold_preproc,
+        learn_tokens,
+        textcat_multilabel,
+        textcat_arch,
+        textcat_positive_label,
+        verbose):
     dframe_trainer = DframeTrainer(lang,
                                    output_path,
                                    train_path,
@@ -175,6 +176,37 @@ def train(lang,
                                    textcat_positive_label,
                                    verbose)
     dframe_trainer.begin_training()
+
+
+@main.command()
+@click.option("--model", "-m", required=True, type=str, help="Model name or path")
+@click.option("--data_path", "-d", required=True, type=str, help="Path of CSV containing validation data")
+@click.option("--gpu_id", "-g", default=-1, show_default=True, type=bool, help="Use GPU")
+@click.option("--gold_preproc", "-G", default=False, show_default=True, type=bool, help="Use gold preprocessing")
+@click.option("--displacy_path", "-dp", default=None, show_default=True, type=str, help="Directory to output rendered "
+                                                                                        "parses as HTML")
+@click.option("--displacy_limit", "-dl", default=25, show_default=True, type=int, help="Limit of parses to render as "
+                                                                                       "HTML")
+@click.option("--return_scores", "-R", default=False, show_default=True, type=bool, help="Return dict containing "
+                                                                                         "model scores")
+def evaluate(
+        model,
+        data_path,
+        gpu_id,
+        gold_preproc,
+        displacy_path,
+        displacy_limit,
+        return_scores):
+    dframe_evaluator = DframeEvaluator(
+        model,
+        data_path,
+        gpu_id,
+        gold_preproc,
+        displacy_path,
+        displacy_limit,
+        return_scores
+    )
+    dframe_evaluator.begin_evaluation()
 
 
 if __name__ == '__main__':
