@@ -22,7 +22,8 @@ cd dframcy
 python setup.py install
 ```
 
-### Usage
+## Usage
+
 #### Linguistic Annotations
 Get linguistic annotation in the dataframe. For linguistic annotations (dataframe column names) refer to [spaCy's Token API](https://spacy.io/api/token) document.
 ```python
@@ -51,10 +52,23 @@ matches_dataframe = dframcy_matcher(doc)
 
 # Phrase Matching
 dframcy_phrase_matcher = DframCyPhraseMatcher("en")
-terms = ["Barack Obama", "Angela Merkel", "Washington, D.C."]
+terms = [u"Barack Obama", u"Angela Merkel",u"Washington, D.C."]
 patterns = [dframcy_phrase_matcher.get_nlp().make_doc(text) for text in terms]
 dframcy_phrase_matcher.add("TerminologyList", None, *patterns)
-doc = dframcy_phrase_matcher.nlp("German Chancellor Angela Merkel and US President Barack Obama "
-                                "converse in the Oval Office inside the White House in Washington, D.C.")
+doc = dframcy_phrase_matcher.nlp(u"German Chancellor Angela Merkel and US President Barack Obama "
+                                u"converse in the Oval Office inside the White House in Washington, D.C.")
 phrase_matches_dataframe = dframcy_phrase_matcher(doc)
+```
+#### Command Line Interface
+Dframcy supports command line arguments for conversion of plain text file to linguistically annotated text in CSV/JSON format, training and evaluation of language models from CSV/XLS formatted training data.
+[Training data example](). CLI arguments for training and evaluation are exactly same as [spaCy's CLI](https://spacy.io/api/cli), only difference is the format of training data.
+```bash
+# convert command
+dframcy convert -i plain_text.txt -o annotations.csv -t CSV
+
+# train command
+dframcy train -l en -o spacy_models -t train.csv -d test.csv
+
+# evaluate command
+dframcy evaluate -m spacy_model/ -d test.csv
 ```
