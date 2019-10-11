@@ -1,7 +1,9 @@
 language: python
+dist: bionic
 python:
   - "3.6"
 install:
   - pip install -r requirements.txt
   - pip install .
+  - python -m spacy download en_core_web_sm
 script: pytest
