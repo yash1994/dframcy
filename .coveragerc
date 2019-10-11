@@ -1,0 +1,12 @@
+[run]
+source =
+    dframcy
+    tests
+branch = False
+omit = setup.py
+    dframcy/cli.py
+
+[report]
+show_missing = True
+exclude_lines =
+    if __name__ == .__main__.:
