@@ -41,8 +41,7 @@ class DframeConverter(object):
         self._nlp = LanguageModel(language_model).get_nlp()
         self.pipeline = pipeline
 
-    @staticmethod
-    def convert(data_path, nlp, data_type='training'):
+    def convert(self, data_path, nlp, data_type='training'):
         """
         To convert xls/csv training data to JSON format.
         :param data_path: str, single file or multiple files (directory) to be converted
@@ -76,6 +75,9 @@ class DframeConverter(object):
                 training_data = None
 
             training_pipeline = utils.get_training_pipeline_from_column_names(training_data.columns)
+            training_pipeline = training_pipeline if len(training_pipeline.split(",")) <= len(self.pipeline.split(","))\
+                else self.pipeline
+
             json_format = utils.dataframe_to_spacy_training_json_format(
                 training_data,
                 nlp,

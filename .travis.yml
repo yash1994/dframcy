@@ -6,6 +6,6 @@ install:
   - pip install -r requirements.txt
   - pip install .
   - python -m spacy download en_core_web_sm
-script: pytest
+script: pytest --cov
 after_success:
   - coveralls

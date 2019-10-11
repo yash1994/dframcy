@@ -1,5 +1,7 @@
 *.pyc
 .idea/
+.coverage
 dframcy.egg-info/
 build/
 dist/
+htmlcov/

@@ -9,4 +9,12 @@ omit = setup.py
 [report]
 show_missing = True
 exclude_lines =
+    pragma: no cover
+    def __repr__
+    RuntimeError
+    NotImplementedError
+    FileNotFoundError
+    ImportError
+    KeyError
+    IOError
     if __name__ == .__main__.:
