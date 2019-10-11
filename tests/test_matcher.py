@@ -9,8 +9,8 @@ from pandas.util.testing import assert_frame_equal
 from dframcy.matcher import DframCyMatcher, DframCyPhraseMatcher
 
 
-dframcy_matcher = DframCyMatcher("en")
-dframcy_phrase_matcher = DframCyPhraseMatcher("en", attr="LOWER")
+dframcy_matcher = DframCyMatcher("en_core_web_sm")
+dframcy_phrase_matcher = DframCyPhraseMatcher("en_core_web_sm", attr="LOWER")
 
 
 def test_matcher():

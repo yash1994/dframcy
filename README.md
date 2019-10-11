@@ -28,7 +28,7 @@ python setup.py install
 Get linguistic annotation in the dataframe. For linguistic annotations (dataframe column names) refer to [spaCy's Token API](https://spacy.io/api/token) document.
 ```python
 from dframcy import DframCy
-dframcy = DframCy("en")
+dframcy = DframCy("en_core_web_sm")
 doc = dframcy.nlp(u"Apple is looking at buying U.K. startup for $1 billion")
 
 # default columns: ['id', 'text', 'start', 'end', 'pos', 'tag', 'dep', 'head', 'label'] 
@@ -44,14 +44,14 @@ token_annotation_dataframe, entity_dataframe = dframcy.to_dataframe(doc, separat
 ```python
 # Token-based Matching
 from dframcy.matcher import DframCyMatcher, DframCyPhraseMatcher
-dframcy_matcher = DframCyMatcher("en")
+dframcy_matcher = DframCyMatcher("en_core_web_sm")
 pattern = [{"LOWER": "hello"}, {"IS_PUNCT": True}, {"LOWER": "world"}]
 dframcy_matcher.add("HelloWorld", None, pattern)
 doc = dframcy_matcher.nlp("Hello, world! Hello world!")
 matches_dataframe = dframcy_matcher(doc)
 
 # Phrase Matching
-dframcy_phrase_matcher = DframCyPhraseMatcher("en")
+dframcy_phrase_matcher = DframCyPhraseMatcher("en_core_web_sm")
 terms = [u"Barack Obama", u"Angela Merkel",u"Washington, D.C."]
 patterns = [dframcy_phrase_matcher.get_nlp().make_doc(text) for text in terms]
 dframcy_phrase_matcher.add("TerminologyList", None, *patterns)

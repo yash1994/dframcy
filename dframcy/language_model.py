@@ -19,7 +19,7 @@ class LanguageModel(object):
         try:
             nlp = spacy.load(self.nlp_model)
         except IOError:
-            nlp = spacy.load("en")
+            nlp = spacy.load("en_core_web_sm")
         return nlp
 
     @property
