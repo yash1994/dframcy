@@ -1,4 +1,4 @@
-# DframCy
+# DframCy [![Build Status](https://travis-ci.org/yash1994/dframcy.svg?branch=master)](https://travis-ci.org/yash1994/dframcy)
 DframCy is a light-weight utility module to integrate Pandas Dataframe to spaCy's linguistic annotation and training tasks. DframCy provides clean APIs to convert spaCy's linguistic annotations, Matcher and PhraseMatcher information to Pandas dataframe, also supports training and evaluation of NLP pipeline from CSV/XLXS/XLS without any changes to spaCy's underlying APIs.
 
 ## Getting Started
