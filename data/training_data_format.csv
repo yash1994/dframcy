@@ -1,0 +1,7 @@
+text,token_orth,token_tag,token_head,token_dep,entities
+Uber blew through $1 million a week,"'Uber', 'blew', 'through', '$', '1', 'million', 'a', 'week'","'NNP', 'VBD', 'IN', '$', 'CD', 'CD', 'DT', 'NN'","1, 0, -1, 2, 1, -3, 1, -2","'nsubj', 'ROOT', 'prt', 'quantmod', 'compound', 'pobj', 'det', 'npadvmod'","[(0, 4, 'ORG')]"
+Android Pay expands to Canada,"'Android', 'Pay', 'expands', 'to', 'Canada'","'NNP', 'NNP', 'VBZ', 'IN', 'NNP'","1, 1, 0, -1, -1","'compound', 'nsubj', 'ROOT', 'prep', 'pobj'","[(0, 11, 'PRODUCT'), (23, 30, 'GPE')]"
+Spotify steps up Asia expansion,"'Spotify', 'steps', 'up', 'Asia', 'expansion'","'VB', 'VBZ', 'RP', 'NNP', 'NN'","0, -1, -1, 1, -4","'ROOT', 'dobj', 'prt', 'compound', 'dobj'","[(0, 8, ""ORG""), (17, 21, ""LOC"")]"
+Google Maps launches location sharing,"'Google', 'Maps', 'launches', 'location', 'sharing'","'NNP', 'NNPS', 'VBZ', 'NN', 'NN'","1, 1, 0, 1, -2","'compound', 'nsubj', 'ROOT', 'compound', 'dobj'","[(0, 11, ""PRODUCT"")]"
+Google rebrands its business apps,"'Google', 'rebrands', 'its', 'business', 'apps'","'NNP', 'VBZ', 'PRP$', 'NN', 'NNS'","1, 0, 2, 1, -3","'nsubj', 'ROOT', 'poss', 'compound', 'dobj'","[(0, 6, ""ORG"")]"
+look what i found on google! Joy,"'look', 'what', 'i', 'found', 'on', 'google', '!', 'joy'","'VB', 'WP', 'PRP', 'VBD', 'IN', 'NNP', '.', 'NN'","0, 2, 1, -3, -1, -1, -6, -7","'ROOT', 'dobj', 'nsubj', 'ccomp', 'prep', 'pobj', 'punct', 'dep'","[(21, 27, ""PRODUCT"")]"
