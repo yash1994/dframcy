@@ -11,7 +11,7 @@ DframCy can be easily installed. Just need to the following:
 
 Also need to download spaCy's language model:
 ```bash
-python -m spacy download en_core_web_sm
+python -m spacy download en
 ```
 For more information refer to: [Models & Languages](https://spacy.io/usage/models)
 

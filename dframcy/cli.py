@@ -23,7 +23,7 @@ def main():
 @click.option("--input_file", "-i", required=True, type=Path, help="Input text file path.")
 @click.option("--output_file", "-o", required=True, type=Path, help="Output file path/name")
 @click.option("--convert_type", "-t", default="csv", show_default=True, type=str, help="Output file format (JSON/CSV)")
-@click.option("--language_model", "-l", default="en_core_web_sm", show_default=True, type=str, help="Language model "
+@click.option("--language_model", "-l", default="en", show_default=True, type=str, help="Language model "
                                                                                                     "to be used.")
 @click.option("--columns", "-c", default=DEFAULT_COLUMNS, show_default=True, type=str, help="Annotations to be "
                                                                                             "included in dataframe.")

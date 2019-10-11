@@ -8,7 +8,7 @@ import pandas as pd
 from pandas.util.testing import assert_frame_equal
 from io import open
 from dframcy.dframcy import DframCy
-dframcy = DframCy("en_core_web_sm")
+dframcy = DframCy("en")
 
 current_dir = os.path.dirname(os.path.realpath(__file__))
 project_root = "/" + "/".join(current_dir.split("/")[1:-1])

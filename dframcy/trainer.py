@@ -26,7 +26,7 @@ class DframeConverter(object):
     def __init__(self,
                  train_path,
                  dev_path,
-                 language_model="en_core_web_sm",
+                 language_model="en",
                  pipeline="tagger,parser,ner"):
         """
         initialize JSON formatter.
