@@ -2,6 +2,7 @@ click
 wasabi
 python-magic
 pytest
+python-coveralls
 spacy==2.2.0
 pandas==0.24.2
 cytoolz==0.9.0.1
