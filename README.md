@@ -61,7 +61,7 @@ phrase_matches_dataframe = dframcy_phrase_matcher(doc)
 ```
 #### Command Line Interface
 Dframcy supports command line arguments for conversion of plain text file to linguistically annotated text in CSV/JSON format, training and evaluation of language models from CSV/XLS formatted training data.
-[Training data example](). CLI arguments for training and evaluation are exactly same as [spaCy's CLI](https://spacy.io/api/cli), only difference is the format of training data.
+[Training data example](https://github.com/yash1994/dframcy/blob/master/data/training_data_format.csv). CLI arguments for training and evaluation are exactly same as [spaCy's CLI](https://spacy.io/api/cli), only difference is the format of training data.
 ```bash
 # convert command
 dframcy convert -i plain_text.txt -o annotations.csv -t CSV
