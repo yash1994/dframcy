@@ -14,7 +14,12 @@ python -m spacy download en_core_web_sm
 ```
 For more information refer to: [Models & Languages](https://spacy.io/usage/models)
 
-For installation:
+###Installation:
+This package can be installed from PyPi by running:
+```bash
+pip install dframcy
+```
+To build from source:
 ```bash
 git clone https://github.com/yash1994/dframcy.git
 cd dframcy
