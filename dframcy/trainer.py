@@ -3,7 +3,6 @@ from __future__ import unicode_literals
 
 import os
 import io
-import magic
 import json
 import pandas as pd
 from wasabi import Printer
@@ -51,10 +50,9 @@ class DframeConverter(object):
         """
         if os.path.exists(data_path):
             if os.path.isfile(data_path):
-                if magic.from_file(data_path, mime=True) == 'text/plain' and data_path.endswith(".csv"):
+                if data_path.endswith(".csv"):
                     training_data = pd.read_csv(data_path)
-                elif "application/vnd" in magic.from_file(data_path, mime=True) and \
-                        (data_path.endswith(".xls") or data_path.endswith(".ods")):
+                elif data_path.endswith(".xls") or data_path.endswith(".ods"):
                     training_data = pd.ExcelFile(data_path)
                 else:
                     training_data = None
@@ -63,10 +61,9 @@ class DframeConverter(object):
                 dataframe_list = []
                 for file_name in os.listdir(data_path):
                     file_path = os.path.join(data_path, file_name)
-                    if magic.from_file(file_path, mime=True) == 'text/plain' and file_path.endswith(".csv"):
+                    if file_path.endswith(".csv"):
                         dataframe_list.append(pd.read_csv(file_path))
-                    elif "application/vnd" in magic.from_file(file_path, mime=True) and \
-                            (file_path.endswith(".xls") or file_path.endswith(".ods")):
+                    elif file_path.endswith(".xls") or file_path.endswith(".ods") or file_path.endswith(".xlsx"):
                         dataframe_list.append(pd.ExcelFile(file_path))
                     else:
                         messenger.warn("Unknown file format for {} data file:{}, skipping".format(data_type, file_path))
@@ -82,7 +79,7 @@ class DframeConverter(object):
                 training_data,
                 nlp,
                 training_pipeline)
-            json_formatted_file_path = data_path.strip(".csv").strip(".xls") + ".json"
+            json_formatted_file_path = data_path.rstrip(".csv").rstrip(".xls").rstrip(".ods").rstrip(".xlsx") + ".json"
 
             with io.open(json_formatted_file_path, "w") as file:
                 json.dump(json_format, file)

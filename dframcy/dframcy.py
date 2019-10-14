@@ -30,10 +30,7 @@ class DframCy(LanguageModel):
         _type = attribute[2]
         _is_nested = attribute[1]
 
-        if _type == 0 or _type == 2:
-            values = [getattr(token, _name) for token in doc]
-        else:
-            values = [getattr(token, _name)() for token in doc]
+        values = [getattr(token, _name) for token in doc]
 
         if _is_nested:
             if isinstance(list(values[0]), list):

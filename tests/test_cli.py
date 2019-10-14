@@ -5,7 +5,7 @@ import io
 import json
 import pytest
 import os
-from dframcy.trainer import DframeConverter
+from dframcy.trainer import DframeConverter, DframeTrainer, DframeEvaluator
 
 
 @pytest.mark.parametrize("input_csv_file, output_json_file", [("data/training_data_format.csv",
@@ -1051,3 +1051,23 @@ def test_cli_format_converter_only_ner(input_csv_file):
 
     assert json.dumps(json_formatted_training_data) == json.dumps(training_data_only_ner)
 
+
+@pytest.mark.parametrize("input_csv_file", ["data/training_data_format.csv"])
+def test_cli_training(input_csv_file):
+    dframe_trainer = DframeTrainer(
+        "en",
+        "/tmp/",
+        input_csv_file,
+        input_csv_file,
+        debug_data_first=False
+    )
+    assert dframe_trainer.pipeline == "tagger,parser,ner"
+
+
+@pytest.mark.parametrize("input_csv_file", ["data/training_data_format.csv"])
+def test_cli_evaluation(input_csv_file):
+    dframe_evaluator = DframeEvaluator(
+        "en_core_web_sm",
+        input_csv_file
+    )
+    assert dframe_evaluator.pipeline == "tagger,parser,ner"

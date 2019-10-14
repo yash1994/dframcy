@@ -173,6 +173,14 @@ class DframCyPhraseMatcher(LanguageModel):
             self._phrase_matcher = self.get_phrase_matcher()
         self._phrase_matcher.add(pattern_name, callback, *pattern)
 
+    def remove(self, pattern_name):
+        """
+        To remove pattern from spaCy's matcher object
+        :param pattern_name: str, pattern_name
+        """
+        if self._phrase_matcher:
+            self._phrase_matcher.remove(pattern_name)
+
     def reset(self, change_attribute=None):
         """
         To re-initialize spaCy's phrase matcher object

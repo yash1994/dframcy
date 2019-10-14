@@ -25,6 +25,9 @@ def test_matcher():
     assert dframcy_matcher.get_nlp().vocab.strings[matches[0][0]] == "HelloWorld"
     assert doc[matches[0][1]:matches[0][2]].text == "Hello, world"
 
+    dframcy_matcher.remove("HelloWorld")
+    assert "HelloWorld" not in dframcy_matcher.get_matcher_object()
+
 
 def test_matcher_dataframe():
     dframcy_matcher.reset()
@@ -66,6 +69,9 @@ def test_phrase_matcher():
     assert matches[0][2] == 2
     assert doc[matches[0][1]:matches[0][2]].text == "angela merkel"
     assert doc[matches[1][1]:matches[1][2]].text == "barack Obama"
+
+    dframcy_phrase_matcher.remove("Names")
+    assert "Names" not in dframcy_phrase_matcher.get_phrase_matcher_object()
 
 
 def test_phrase_matcher_dataframe():

@@ -1,9 +1,8 @@
 click
 wasabi
-python-magic
 pytest
 pytest-cov
 python-coveralls
+pandas
+cytoolz
 spacy==2.2.0
-pandas==0.24.2
-cytoolz==0.9.0.1
