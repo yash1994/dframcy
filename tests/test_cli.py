@@ -1117,5 +1117,3 @@ def test_data_debugging(input_csv_file):
         debug_data_first=True
     )
     dframe_trainer.begin_training()
-    os.remove(dframe_trainer.train_path)
-    os.remove(dframe_trainer.dev_path)
