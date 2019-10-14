@@ -1,5 +1,5 @@
 # DframCy
-[![Package Version](https://img.shields.io/pypi/v/dframcy.svg)](https://pypi.python.org/pypi/dframcy/)
+[![Package Version](https://img.shields.io/pypi/v/dframcy.svg?&service=github)](https://pypi.python.org/pypi/dframcy/)
 [![Python 3.6](https://img.shields.io/badge/python-3.6-blue.svg)](https://www.python.org/downloads/release/python-360/) 
 [![Build Status](https://travis-ci.org/yash1994/dframcy.svg?branch=master)](https://travis-ci.org/yash1994/dframcy) 
 [![Coverage Status](https://coveralls.io/repos/github/yash1994/dframcy/badge.svg?&service=github)](https://coveralls.io/github/yash1994/dframcy)
