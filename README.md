@@ -7,11 +7,10 @@ DframCy can be easily installed. Just need to the following:
 * Python 3.6
 * Pandas
 * spaCy 2.2.0
-* python-magic
 
 Also need to download spaCy's language model:
 ```bash
-python -m spacy download en
+python -m spacy download en_core_web_sm
 ```
 For more information refer to: [Models & Languages](https://spacy.io/usage/models)
 
@@ -63,12 +62,12 @@ phrase_matches_dataframe = dframcy_phrase_matcher(doc)
 Dframcy supports command line arguments for conversion of plain text file to linguistically annotated text in CSV/JSON format, training and evaluation of language models from CSV/XLS formatted training data.
 [Training data example](https://github.com/yash1994/dframcy/blob/master/data/training_data_format.csv). CLI arguments for training and evaluation are exactly same as [spaCy's CLI](https://spacy.io/api/cli), only difference is the format of training data.
 ```bash
-# convert command
+# convert
 dframcy convert -i plain_text.txt -o annotations.csv -t CSV
 
-# train command
+# train
 dframcy train -l en -o spacy_models -t train.csv -d test.csv
 
-# evaluate command
+# evaluate
 dframcy evaluate -m spacy_model/ -d test.csv
 ```

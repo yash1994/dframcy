@@ -59,12 +59,20 @@ def test_all_columns_thoroughly():
 
 
 def test_entity_rule_dataframe():
+    dframcy_test_ent = DframCy("en_core_web_sm")
     patterns = [{"label": "ORG", "pattern": "MyCorp Inc."}]
-    dframcy.add_entity_ruler(patterns)
-    doc = dframcy.nlp("MyCorp Inc. is a company in the U.S.")
-    _, entity_frame = dframcy.to_dataframe(doc, separate_entity_dframe=True)
+    dframcy_test_ent.add_entity_ruler(patterns)
+    doc = dframcy_test_ent.nlp("MyCorp Inc. is a company in the U.S.")
+    _, entity_frame = dframcy_test_ent.to_dataframe(doc, separate_entity_dframe=True)
     results = pd.DataFrame({
         "ent_text": ["MyCorp Inc.", "U.S."],
         "ent_label": ["ORG", "GPE"]
     })
     assert_frame_equal(entity_frame, results)
+
+
+def test_sentence_without_named_entities():
+    doc = dframcy.nlp("Autonomous cars shift insurance liability toward manufacturers")
+    dataframe = dframcy.to_dataframe(doc, ["pos", "tag", "ent_label"])
+
+    assert "tokens_label" not in dataframe.columns

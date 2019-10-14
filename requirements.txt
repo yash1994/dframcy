@@ -5,4 +5,5 @@ pytest-cov
 python-coveralls
 pandas
 cytoolz
+xlrd
 spacy==2.2.0

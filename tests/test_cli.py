@@ -5,6 +5,7 @@ import io
 import json
 import pytest
 import os
+import shutil
 from dframcy.trainer import DframeConverter, DframeTrainer, DframeEvaluator
 
 
@@ -1071,3 +1072,50 @@ def test_cli_evaluation(input_csv_file):
         input_csv_file
     )
     assert dframe_evaluator.pipeline == "tagger,parser,ner"
+
+
+@pytest.mark.parametrize("input_csv_file, dev_ods_file", [("data/training_data_format.csv",
+                                                          "data/training_data_format_xls.xls")])
+def test_ods_training_file_format(input_csv_file, dev_ods_file):
+    dframe_trainer = DframeTrainer(
+        "en",
+        "/tmp/",
+        input_csv_file,
+        dev_ods_file
+    )
+    os.remove(dframe_trainer.train_path)
+    os.remove(dframe_trainer.dev_path)
+    assert dframe_trainer.pipeline == "tagger,parser,ner"
+
+
+@pytest.mark.parametrize("input_csv_file", ["data/training_data_format.csv"])
+def test_training_from_directory(input_csv_file):
+    if not os.path.exists("/tmp/dframcy_test"):
+        os.mkdir("/tmp/dframcy_test/")
+    file_name, file_extension = os.path.splitext(input_csv_file)
+    file_name = str(file_name.split("/")[-1])
+    for i in range(10):
+        shutil.copy(input_csv_file, "/tmp/dframcy_test/" + file_name + "_" + str(i) + file_extension)
+    dframe_trainer = DframeTrainer(
+        "en",
+        "/tmp/",
+        "/tmp/dframcy_test/",
+        "/tmp/dframcy_test/"
+    )
+    shutil.rmtree("/tmp/dframcy_test/")
+    assert dframe_trainer.pipeline == "tagger,parser,ner"
+
+
+@pytest.mark.xfail  # test case supposed to fail due to very low number of training instances
+@pytest.mark.parametrize("input_csv_file", ["data/training_data_format.csv"])
+def test_data_debugging(input_csv_file):
+    dframe_trainer = DframeTrainer(
+        "en",
+        "/tmp/",
+        input_csv_file,
+        input_csv_file,
+        debug_data_first=True
+    )
+    dframe_trainer.begin_training()
+    os.remove(dframe_trainer.train_path)
+    os.remove(dframe_trainer.dev_path)

@@ -52,8 +52,9 @@ class DframeConverter(object):
             if os.path.isfile(data_path):
                 if data_path.endswith(".csv"):
                     training_data = pd.read_csv(data_path)
-                elif data_path.endswith(".xls") or data_path.endswith(".ods"):
-                    training_data = pd.ExcelFile(data_path)
+                elif data_path.endswith(".xls") or data_path.endswith(".xlsx"):
+                    excel_file = pd.ExcelFile(data_path)
+                    training_data = excel_file.parse("Sheet1")
                 else:
                     training_data = None
                     messenger.fail("Unknown file format for {} data file:'{}'".format(data_type, data_path), exits=-1)
@@ -63,8 +64,9 @@ class DframeConverter(object):
                     file_path = os.path.join(data_path, file_name)
                     if file_path.endswith(".csv"):
                         dataframe_list.append(pd.read_csv(file_path))
-                    elif file_path.endswith(".xls") or file_path.endswith(".ods") or file_path.endswith(".xlsx"):
-                        dataframe_list.append(pd.ExcelFile(file_path))
+                    elif file_path.endswith(".xls") or file_path.endswith(".xlsx"):
+                        excel_file = pd.ExcelFile(file_name)
+                        dataframe_list.append(excel_file.parse("Sheet1"))
                     else:
                         messenger.warn("Unknown file format for {} data file:{}, skipping".format(data_type, file_path))
                 training_data = pd.concat(dataframe_list, join='inner', ignore_index=True)
@@ -79,7 +81,7 @@ class DframeConverter(object):
                 training_data,
                 nlp,
                 training_pipeline)
-            json_formatted_file_path = data_path.rstrip(".csv").rstrip(".xls").rstrip(".ods").rstrip(".xlsx") + ".json"
+            json_formatted_file_path = data_path.rstrip(".csv").rstrip(".xls").rstrip(".xlsx") + ".json"
 
             with io.open(json_formatted_file_path, "w") as file:
                 json.dump(json_format, file)
