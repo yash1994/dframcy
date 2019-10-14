@@ -1074,28 +1074,36 @@ def test_cli_evaluation(input_csv_file):
     assert dframe_evaluator.pipeline == "tagger,parser,ner"
 
 
-@pytest.mark.parametrize("input_csv_file, dev_ods_file", [("data/training_data_format.csv",
+@pytest.mark.parametrize("input_csv_file, dev_xls_file", [("data/training_data_format.csv",
                                                           "data/training_data_format_xls.xls")])
-def test_ods_training_file_format(input_csv_file, dev_ods_file):
+def test_ods_training_file_format(input_csv_file, dev_xls_file):
     dframe_trainer = DframeTrainer(
         "en",
         "/tmp/",
         input_csv_file,
-        dev_ods_file
+        dev_xls_file
     )
     os.remove(dframe_trainer.train_path)
     os.remove(dframe_trainer.dev_path)
     assert dframe_trainer.pipeline == "tagger,parser,ner"
 
 
-@pytest.mark.parametrize("input_csv_file", ["data/training_data_format.csv"])
-def test_training_from_directory(input_csv_file):
+@pytest.mark.parametrize("input_csv_file, dev_xls_file", [("data/training_data_format.csv",
+                                                          "data/training_data_format_xls.xls")])
+def test_training_from_directory(input_csv_file, dev_xls_file):
     if not os.path.exists("/tmp/dframcy_test"):
         os.mkdir("/tmp/dframcy_test/")
+
     file_name, file_extension = os.path.splitext(input_csv_file)
     file_name = str(file_name.split("/")[-1])
     for i in range(10):
         shutil.copy(input_csv_file, "/tmp/dframcy_test/" + file_name + "_" + str(i) + file_extension)
+
+    file_name, file_extension = os.path.splitext(dev_xls_file)
+    file_name = str(file_name.split("/")[-1])
+    for i in range(10):
+        shutil.copy(dev_xls_file, "/tmp/dframcy_test/" + file_name + "_" + str(i) + file_extension)
+
     dframe_trainer = DframeTrainer(
         "en",
         "/tmp/",

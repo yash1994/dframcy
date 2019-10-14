@@ -65,13 +65,11 @@ class DframeConverter(object):
                     if file_path.endswith(".csv"):
                         dataframe_list.append(pd.read_csv(file_path))
                     elif file_path.endswith(".xls") or file_path.endswith(".xlsx"):
-                        excel_file = pd.ExcelFile(file_name)
+                        excel_file = pd.ExcelFile(file_path)
                         dataframe_list.append(excel_file.parse("Sheet1"))
                     else:
                         messenger.warn("Unknown file format for {} data file:{}, skipping".format(data_type, file_path))
                 training_data = pd.concat(dataframe_list, join='inner', ignore_index=True)
-            else:
-                training_data = None
 
             training_pipeline = utils.get_training_pipeline_from_column_names(training_data.columns)
             training_pipeline = training_pipeline if len(training_pipeline.split(",")) <= len(self.pipeline.split(","))\
