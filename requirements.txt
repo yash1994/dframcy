@@ -3,6 +3,7 @@ wasabi
 pytest
 pytest-cov
 python-coveralls
+tox-travis
 pandas
 cytoolz
 xlrd
