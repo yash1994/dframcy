@@ -4,6 +4,7 @@ from __future__ import unicode_literals
 import os
 import io
 import json
+import spacy
 import pandas as pd
 from wasabi import Printer
 from pathlib import Path
@@ -22,6 +23,7 @@ class DframeConverter(object):
     Base class to convert xls/csv training data format to spaCy's JSON format
     (https://spacy.io/api/annotation#json-input).
     """
+
     def __init__(self,
                  train_path,
                  dev_path,
@@ -72,7 +74,7 @@ class DframeConverter(object):
                 training_data = pd.concat(dataframe_list, join='inner', ignore_index=True)
 
             training_pipeline = utils.get_training_pipeline_from_column_names(training_data.columns)
-            training_pipeline = training_pipeline if len(training_pipeline.split(",")) <= len(self.pipeline.split(","))\
+            training_pipeline = training_pipeline if len(training_pipeline.split(",")) <= len(self.pipeline.split(",")) \
                 else self.pipeline
 
             json_format = utils.dataframe_to_spacy_training_json_format(
@@ -92,6 +94,7 @@ class DframeTrainer(DframeConverter):
     """
     Wrapper class over spaCy's CLI training from CSV/XLS files.
     """
+
     def __init__(self,
                  lang,
                  output_path,
@@ -214,6 +217,7 @@ class DframeEvaluator(DframeConverter):
     """
     Wrapper class over spaCy's CLI model evaluation from CSV/XLS files.
     """
+
     def __init__(self,
                  model,
                  data_path,
@@ -250,3 +254,80 @@ class DframeEvaluator(DframeConverter):
             self.displacy_limit,
             self.return_scores
         )
+
+
+class DframeTrainClassifier(object):
+    """
+    To train text classifier from CSV file.
+    """
+
+    def __init__(self,
+                 output_path,
+                 train_path,
+                 dev_path,
+                 model=None,
+                 n_iter=20,
+                 init_tok2vec=None,
+                 exclusive_classes=False,
+                 architecture="ensemble",
+                 train_split=0.8):
+
+        self.output_path = output_path
+        self.train_path = train_path
+        self.dev_path = dev_path
+        self.model = model
+        self.n_iter = n_iter
+        self.init_tok2vec = init_tok2vec
+        self.exclusive_classes = exclusive_classes
+        self.architecture = architecture
+        self.train_split = train_split
+
+        if self.model is not None:
+            self.nlp = spacy.load(self.model)
+        else:
+            self.nlp = spacy.blank("en")
+
+        if "textcat" not in self.nlp.pipe_names:
+            self.textcat = self.nlp.create_pipe(
+                "textcat",
+                config={"exclusive_classes": self.exclusive_classes, "architecture": self.architecture}
+            )
+            self.nlp.add_pipe(self.textcat, last=True)
+        else:
+            self.textcat = self.nlp.get_pipe("textcat")
+
+    def load_dataset(self):
+
+        if self.train_path != self.dev_path:
+            training_dataframe = pd.read_csv(self.train_path)
+            testing_dataframe = pd.read_csv(self.dev_path)
+        else:
+            messenger.warn("Same Training and validation data")
+            messenger.info("Train and test data will be split in ratio:{}".format(self.train_split))
+            dataset = pd.read_csv(self.train_path)
+            dataset = dataset.sample(frac=1).reset_index(drop=True)  # shuffle data
+            self.train_split = int(dataset.shape[0] * self.train_split)
+            training_dataframe, testing_dataframe = dataset.iloc[:, :self.train_split], dataset.iloc[:,
+                                                                                        self.train_split:]
+
+        unique_train_labels = pd.unique(training_dataframe["labels"])
+        unique_test_labels = pd.unique(testing_dataframe["labels"])
+
+        if unique_train_labels != unique_test_labels:
+            additional_labels = set(unique_train_labels) - set(unique_test_labels)
+            messenger.warn("Found following additional labels in test set: {}".
+                           format(", ".join(list(additional_labels))))
+            messenger.info("Removing test instances having additional labels from test set")
+            testing_dataframe = testing_dataframe[testing_dataframe.label not in additional_labels]
+
+        for label in unique_train_labels:
+            self.textcat.add_label(label)
+
+        training_text, training_label = training_dataframe["text"].tolist(), training_dataframe["labels"].tolist()
+        testing_text, testing_label = testing_dataframe["text"].tolist(), testing_dataframe["labels"].tolist()
+
+        training_cats = [{label: 1 if label == _label else 0 for label in unique_train_labels} for _label in
+                         training_label]
+        testing_cats = [{label: 1 if label == _label else 0 for label in unique_train_labels} for _label in
+                        testing_label]
+        return training_text, training_cats, testing_text, testing_cats
