@@ -5,3 +5,4 @@ dframcy.egg-info/
 build/
 dist/
 htmlcov/
+.tox/
