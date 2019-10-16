@@ -11,6 +11,7 @@ from pathlib import Path
 from spacy.cli.train import train
 from spacy.cli.debug_data import debug_data
 from spacy.cli.evaluate import evaluate
+from spacy.util import minibatch, compounding
 
 from dframcy.dframcy import utils
 from dframcy.language_model import LanguageModel
@@ -298,6 +299,18 @@ class DframeTrainClassifier(object):
 
     def load_dataset(self):
 
+        if not os.path.exists(self.train_path):
+            messenger.fail("Input file path does not exist", exits=-1)
+
+        if not os.path.exists(self.dev_path):
+            messenger.warn("Validation file path does not exist, splitting training data for validation")
+            self.dev_path = self.train_path
+
+        if self.output_path is not None:
+            self.output_path = Path(self.output_path)
+            if not self.output_path.exists():
+                self.output_path.mkdir()
+
         if self.train_path != self.dev_path:
             training_dataframe = pd.read_csv(self.train_path)
             testing_dataframe = pd.read_csv(self.dev_path)
@@ -307,8 +320,8 @@ class DframeTrainClassifier(object):
             dataset = pd.read_csv(self.train_path)
             dataset = dataset.sample(frac=1).reset_index(drop=True)  # shuffle data
             self.train_split = int(dataset.shape[0] * self.train_split)
-            training_dataframe, testing_dataframe = dataset.iloc[:, :self.train_split], dataset.iloc[:,
-                                                                                        self.train_split:]
+            training_dataframe = dataset.iloc[:, :self.train_split]
+            testing_dataframe = dataset.iloc[:, self.train_split:]
 
         unique_train_labels = pd.unique(training_dataframe["labels"])
         unique_test_labels = pd.unique(testing_dataframe["labels"])
@@ -331,3 +344,31 @@ class DframeTrainClassifier(object):
         testing_cats = [{label: 1 if label == _label else 0 for label in unique_train_labels} for _label in
                         testing_label]
         return training_text, training_cats, testing_text, testing_cats
+
+    def begin_training(self):
+
+        train_text, train_label, test_text, test_label = self.load_dataset()
+        train_data = list(zip(train_text, [{"cats": cats} for cats in train_label]))
+
+        # disable other pipeline components
+        other_pipes = [pipe for pipe in self.nlp.pipe_names if pipe != "textcat"]
+        with self.nlp.disable_pipes(*other_pipes):
+            optimizer = self.nlp.begin_training()
+            if self.init_tok2vec is not None:
+                with self.init_tok2vec.open("rb") as infile:
+                    self.textcat.model.tok2vec.from_bytes(infile.read())
+        # variable batch size, steady increase
+        batch_sizes = compounding(4.0, 32.0, 1.001)
+
+        messenger.info("{:^5}\t{:^5}\t{:^5}\t{:^5}".format("LOSS", "P", "R", "F"))
+
+        for i in range(self.n_iter):
+            losses = {}
+            batches = minibatch(train_data, batch_sizes)
+            for batch in batches:
+                texts, annotations = zip(*batch)
+                self.nlp.update(texts, annotations, sgd=optimizer, drop=0.2, losses=losses)
+
+        with self.nlp.use_params(optimizer.averages):
+            self.nlp.to_disk(self.output_path)
+        messenger.info("Saved model to {}".format(self.output_path))
