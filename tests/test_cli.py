@@ -6,8 +6,9 @@ import json
 import pytest
 import os
 import shutil
+import operator
 from jsondiff import diff
-from dframcy.trainer import DframeConverter, DframeTrainer, DframeEvaluator
+from dframcy.trainer import DframeConverter, DframeTrainer, DframeEvaluator, DframeTrainClassifier
 
 
 @pytest.mark.parametrize("input_csv_file, output_json_file", [("data/training_data_format.csv",
@@ -1127,3 +1128,17 @@ def test_data_debugging(input_csv_file):
         debug_data_first=True
     )
     dframe_trainer.begin_training()
+
+
+@pytest.mark.parametrize("input_csv_file", ["data/textcat_training.csv"])
+def test_cli_textcat_training(input_csv_file):
+    dframe_textcat_classifier = DframeTrainClassifier(
+        "/tmp/",
+        input_csv_file,
+        input_csv_file,
+        n_iter=1
+    )
+    test_text = "This movie sucked"
+    dframe_textcat_classifier.begin_training()
+    doc = dframe_textcat_classifier.nlp(test_text)
+    assert max(doc.cats.items(), key=operator.itemgetter(1))[0] in ['NEG', 'POS']
