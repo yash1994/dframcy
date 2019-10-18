@@ -5,7 +5,9 @@ import os
 import io
 import json
 import spacy
+import operator
 import pandas as pd
+import numpy as np
 from wasabi import Printer
 from pathlib import Path
 from spacy.cli.train import train
@@ -282,6 +284,7 @@ class DframeTrainClassifier(object):
         self.exclusive_classes = exclusive_classes
         self.architecture = architecture
         self.train_split = train_split
+        self.label_map = None
 
         if self.model is not None:
             self.nlp = spacy.load(self.model)
@@ -320,18 +323,28 @@ class DframeTrainClassifier(object):
             dataset = pd.read_csv(self.train_path)
             dataset = dataset.sample(frac=1).reset_index(drop=True)  # shuffle data
             self.train_split = int(dataset.shape[0] * self.train_split)
-            training_dataframe = dataset.iloc[:, :self.train_split]
-            testing_dataframe = dataset.iloc[:, self.train_split:]
+            datasets = np.vsplit(dataset, np.array([self.train_split]))
+            training_dataframe = datasets[0]
+            testing_dataframe = datasets[1]
 
-        unique_train_labels = pd.unique(training_dataframe["labels"])
-        unique_test_labels = pd.unique(testing_dataframe["labels"])
+        if not ("text" in training_dataframe.columns and "labels" in training_dataframe.columns):
+            messenger.fail("Inconsistent column names in training CSV", exits=-1)
 
-        if unique_train_labels != unique_test_labels:
+        if not ("text" in testing_dataframe.columns and "labels" in testing_dataframe.columns):
+            messenger.fail("Inconsistent column names in validation CSV", exits=-1)
+
+        unique_train_labels = list(pd.unique(training_dataframe["labels"]))
+        unique_test_labels = list(pd.unique(testing_dataframe["labels"]))
+
+        if not self.label_map:
+            self.label_map = {i: l for i, l in enumerate(unique_train_labels)}
+
+        if len(set(unique_train_labels) - set(unique_test_labels)) != 0:
             additional_labels = set(unique_train_labels) - set(unique_test_labels)
             messenger.warn("Found following additional labels in test set: {}".
                            format(", ".join(list(additional_labels))))
             messenger.info("Removing test instances having additional labels from test set")
-            testing_dataframe = testing_dataframe[testing_dataframe.label not in additional_labels]
+            testing_dataframe = testing_dataframe[testing_dataframe.labels not in additional_labels]
 
         for label in unique_train_labels:
             self.textcat.add_label(label)
@@ -360,7 +373,7 @@ class DframeTrainClassifier(object):
         # variable batch size, steady increase
         batch_sizes = compounding(4.0, 32.0, 1.001)
 
-        messenger.info("{:^5}\t{:^5}\t{:^5}\t{:^5}".format("LOSS", "P", "R", "F"))
+        print("{:^5}\t{:^5}\t{:^5}\t{:^5}".format("LOSS", "P", "R", "F"))
 
         for i in range(self.n_iter):
             losses = {}
@@ -368,7 +381,19 @@ class DframeTrainClassifier(object):
             for batch in batches:
                 texts, annotations = zip(*batch)
                 self.nlp.update(texts, annotations, sgd=optimizer, drop=0.2, losses=losses)
-
+            with self.textcat.model.use_params(optimizer.averages):
+                # evaluate on the dev data split off in load_data()
+                p, r, f = self.evaluate(self.nlp.tokenizer, test_text, test_label)
+                print("{0:.3f}\t{1:.3f}\t{2:.3f}\t{3:.3f}".format(losses["textcat"], p, r, f))
         with self.nlp.use_params(optimizer.averages):
             self.nlp.to_disk(self.output_path)
         messenger.info("Saved model to {}".format(self.output_path))
+
+    def evaluate(self, tokenizer, test_texts, test_cats):
+        docs = (tokenizer(text) for text in test_texts)
+        true_labels = list(map(lambda x: [k for k, v in x.items() if v][0], test_cats))
+        pred_labels = [max(doc.cats.items(), key=operator.itemgetter(1))[0] for doc in self.textcat.pipe(docs)]
+
+        conf_mat = utils.confusion_matrix(pred_labels, true_labels, self.label_map)
+
+        return utils.precision_recall_fscore(conf_mat)

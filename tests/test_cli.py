@@ -6,6 +6,7 @@ import json
 import pytest
 import os
 import shutil
+from jsondiff import diff
 from dframcy.trainer import DframeConverter, DframeTrainer, DframeEvaluator
 
 
@@ -18,10 +19,11 @@ def test_cli_format_converter_full_pipeline(input_csv_file, output_json_file):
     with io.open(json_formatted_file_path, "r") as format_file:
         json_formatted_training_data = json.load(format_file)
     os.remove(json_formatted_file_path)
+
     with io.open(output_json_file, "r") as output_file:
         actual_json_formatted_training_data = json.load(output_file)
 
-    assert json.dumps(json_formatted_training_data) == json.dumps(actual_json_formatted_training_data)
+    assert diff(json_formatted_training_data, actual_json_formatted_training_data) == {}
 
 
 @pytest.mark.parametrize("input_csv_file", ["data/training_data_format.csv"])
@@ -304,7 +306,7 @@ def test_cli_format_converter_only_tagger(input_csv_file):
         json_formatted_training_data = json.load(format_file)
     os.remove(json_formatted_file_path)
 
-    assert json.dumps(json_formatted_training_data) == json.dumps(training_data_only_tagger)
+    assert diff(json_formatted_training_data, training_data_only_tagger) == {}
 
 
 @pytest.mark.parametrize("input_csv_file", ["data/training_data_format.csv"])
@@ -659,7 +661,7 @@ def test_cli_format_converter_only_parser(input_csv_file):
         json_formatted_training_data = json.load(format_file)
     os.remove(json_formatted_file_path)
 
-    assert json.dumps(json_formatted_training_data) == json.dumps(training_data_only_parser)
+    assert diff(json_formatted_training_data, training_data_only_parser) == {}
 
 
 @pytest.mark.parametrize("input_csv_file", ["data/training_data_format.csv"])
@@ -1050,7 +1052,7 @@ def test_cli_format_converter_only_ner(input_csv_file):
         json_formatted_training_data = json.load(format_file)
     os.remove(json_formatted_file_path)
 
-    assert json.dumps(json_formatted_training_data) == json.dumps(training_data_only_ner)
+    assert diff(json_formatted_training_data, training_data_only_ner) == {}
 
 
 @pytest.mark.parametrize("input_csv_file", ["data/training_data_format.csv"])

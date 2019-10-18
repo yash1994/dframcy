@@ -1,6 +1,8 @@
+import numpy as np
 from ast import literal_eval
 from spacy.gold import biluo_tags_from_offsets, tags_to_entities
 from wasabi import Printer
+from scipy.sparse import coo_matrix
 messenger = Printer()
 
 
@@ -320,3 +322,76 @@ def dataframe_to_spacy_training_json_format(dataframe, nlp, pipline):
             ]
         })
     return list_of_documents
+
+
+def confusion_matrix(prediction, target, label_map):
+    inverse_label_map = {v: k for k, v in label_map.items()}
+    prediction = np.asarray([inverse_label_map[i] for i in prediction])
+    target = np.asarray([inverse_label_map[i] for i in target])
+
+    if len(label_map) == 2:
+        return coo_matrix((np.ones(target.shape[0], dtype=np.int64), (target, prediction)),
+                          shape=(len(label_map), len(label_map))).toarray()
+
+    true_positives = prediction == target
+    true_positives_bins = target[true_positives]
+
+    if len(true_positives_bins):
+        tp_sum = np.bincount(true_positives_bins, minlength=len(label_map))
+    else:
+        true_sum = prediction_sum = tp_sum = np.zeros(len(label_map))
+
+    if len(prediction):
+        prediction_sum = np.bincount(prediction, minlength=len(label_map))
+    else:
+        prediction_sum = np.zeros(len(label_map))
+
+    if len(target):
+        true_sum = np.bincount(target, minlength=len(label_map))
+    else:
+        true_sum = np.zeros(len(label_map))
+
+    fp = prediction_sum - tp_sum
+    fn = true_sum - tp_sum
+    tp = tp_sum
+    tn = target.shape[0] - tp - fp - fn
+
+    return np.array([tn, fp, fn, tp]).T.reshape(-1, 2, 2)
+
+
+def precision_recall_fscore(_confusion_matrix):
+
+    if _confusion_matrix.ndim == 2: # binary classification
+        tp = _confusion_matrix[1][1]
+        tn = _confusion_matrix[0][0]
+        fp = _confusion_matrix[0][1]
+        fn = _confusion_matrix[1][0]
+
+        precision = tp / (tp + fp) if tp + fp > 0 else 0
+        recall = tp / (tp + fn) if tp + fn > 0 else 0
+        f_score = 2 * (precision * recall) / (precision + recall) if (precision + recall) > 0 else 0
+
+        return precision, recall, f_score
+    else:
+        tp_sum = _confusion_matrix[:, 1, 1]
+        pred_sum = tp_sum + _confusion_matrix[:, 0, 1]
+        true_sum = tp_sum + _confusion_matrix[:, 1, 0]
+
+        # avoid nan/inf
+        pred_sum[pred_sum == 0.0] = 1
+        true_sum[true_sum == 0.0] = 1
+
+        precision = tp_sum / pred_sum
+
+        recall = tp_sum / true_sum
+
+        f_denom = precision + recall
+        f_denom[f_denom == 0.0] = 1
+        f_score = 2 * (precision * recall) / f_denom
+
+        # weighted (true labels) average
+        precision = np.average(precision, weights=true_sum)
+        recall = np.average(recall, weights=true_sum)
+        f_score = np.average(f_score, weights=true_sum)
+
+        return precision, recall, f_score
