@@ -8,7 +8,7 @@ from wasabi import Printer
 from io import open
 from .dframcy import DframCy
 from .utils import get_default_columns
-from .trainer import DframeTrainer, DframeEvaluator
+from .trainer import DframeTrainer, DframeEvaluator, DframeTrainClassifier
 
 messenger = Printer()
 DEFAULT_COLUMNS = ",".join(get_default_columns())
@@ -207,6 +207,40 @@ def evaluate(
         return_scores
     )
     dframe_evaluator.begin_evaluation()
+
+
+@main.command()
+@click.option("--output_path", "-o", required=True, type=str, help="Output model path")
+@click.option("--train_path", "-t", required=True, type=str, help="path to training data csv")
+@click.option("--dev_path", "-d", required=True, type=str, help="path to testing/validation data csv")
+@click.option("--model", "-m", default=None, show_default=True, type=str, help="language model name")
+@click.option("--n_iter", "-n", default=20, show_default=True, type=int, help="Number of training iterations")
+@click.option("--init_tok2vec", "-t2v", default=None, show_default=True, type=Path, help="Pretrained tok2vec weights")
+@click.option("--exclusive_classes", "-ec", default=False, show_default=True, type=bool, help="classes exclusive")
+@click.option("--architecture", "-a", default="ensemble", show_default=True, type=str, help="model architecture")
+@click.option("--train_split", "-s", default=0.8, show_default=True, type=float, help="split in case no testing data")
+def textcat(
+        output_path,
+        train_path,
+        dev_path,
+        model,
+        n_iter,
+        init_tok2vec,
+        exclusive_classes,
+        architecture,
+        train_split):
+    dframe_textcat_train = DframeTrainClassifier(
+        output_path,
+        train_path,
+        dev_path,
+        model,
+        n_iter,
+        init_tok2vec,
+        exclusive_classes,
+        architecture,
+        train_split
+    )
+    dframe_textcat_train.begin_training()
 
 
 if __name__ == '__main__':

@@ -1,16 +1,14 @@
 # coding: utf-8
 from __future__ import unicode_literals
 
-import os
-import pytest
-import json
+import spacy
 import pandas as pd
 from pandas.util.testing import assert_frame_equal
 from dframcy.matcher import DframCyMatcher, DframCyPhraseMatcher
 
 
-dframcy_matcher = DframCyMatcher("en_core_web_sm")
-dframcy_phrase_matcher = DframCyPhraseMatcher("en_core_web_sm", attr="LOWER")
+dframcy_matcher = DframCyMatcher(spacy.load("en_core_web_sm"))
+dframcy_phrase_matcher = DframCyPhraseMatcher(spacy.load("en_core_web_sm"), attr="LOWER")
 
 
 def test_matcher():

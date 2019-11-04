@@ -4,11 +4,12 @@ from __future__ import unicode_literals
 import os
 import pytest
 import json
+import spacy
 import pandas as pd
 from pandas.util.testing import assert_frame_equal
 from io import open
 from dframcy.dframcy import DframCy
-dframcy = DframCy("en_core_web_sm")
+dframcy = DframCy(spacy.load("en_core_web_sm"))
 
 current_dir = os.path.dirname(os.path.realpath(__file__))
 project_root = "/" + "/".join(current_dir.split("/")[1:-1])
@@ -59,7 +60,7 @@ def test_all_columns_thoroughly():
 
 
 def test_entity_rule_dataframe():
-    dframcy_test_ent = DframCy("en_core_web_sm")
+    dframcy_test_ent = DframCy(spacy.load("en_core_web_sm"))
     patterns = [{"label": "ORG", "pattern": "MyCorp Inc."}]
     dframcy_test_ent.add_entity_ruler(patterns)
     doc = dframcy_test_ent.nlp("MyCorp Inc. is a company in the U.S.")

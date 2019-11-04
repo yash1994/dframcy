@@ -2,18 +2,27 @@
 from __future__ import unicode_literals
 
 import pandas as pd
-from dframcy.language_model import LanguageModel
 from spacy.matcher import Matcher, PhraseMatcher
 
 
-class DframCyMatcher(LanguageModel):
+class DframCyMatcher(object):
     """
     Dataframe wrapper class over spaCy's Matcher
     https://spacy.io/api/matcher
     """
-    def __init__(self, nlp_model):
-        super(DframCyMatcher, self).__init__(nlp_model)
+    def __init__(self, nlp_pipeline):
+        """
+        :param nlp_pipeline: nlp pipeline to be used (i.e. language model).
+        """
+        self._nlp = nlp_pipeline
         self._matcher = None
+
+    @property
+    def nlp(self):
+        return self._nlp
+
+    def get_nlp(self):
+        return self._nlp
 
     def __call__(self, doc):
         """
@@ -67,8 +76,6 @@ class DframCyMatcher(LanguageModel):
         To initialize spaCy's matcher class object.
         :return: Matcher object
         """
-        if not self._nlp:
-            self._nlp = self.create_nlp_pipeline()
         return Matcher(self._nlp.vocab)
 
     def add(self, pattern_name, callback, *pattern):
@@ -97,19 +104,26 @@ class DframCyMatcher(LanguageModel):
         self._matcher = self.get_matcher()
 
 
-class DframCyPhraseMatcher(LanguageModel):
+class DframCyPhraseMatcher(object):
     """
         Dataframe wrapper class over spaCy's PhraseMatcher
         https://spacy.io/api/phrasematcher
     """
-    def __init__(self, nlp_model, attr=None):
+    def __init__(self, nlp_pipeline, attr=None):
         """
-        :param nlp_model: language model to be used.
+        :param nlp_pipeline: nlp pipeline to be used (i.e. language model).
         :param attr: str, token attribute to match on (default: "ORTH")
         """
-        super(DframCyPhraseMatcher, self).__init__(nlp_model)
+        self._nlp = nlp_pipeline
         self._phrase_matcher = None
         self.attribute = attr
+
+    @property
+    def nlp(self):
+        return self._nlp
+
+    def get_nlp(self):
+        return self._nlp
 
     def __call__(self, doc):
         """
@@ -151,8 +165,6 @@ class DframCyPhraseMatcher(LanguageModel):
         To get spaCy's phrase matcher class object (used for testing only).
         :return: phrase matcher object
         """
-        if not self._nlp:
-            self._nlp = self.create_nlp_pipeline()
         return PhraseMatcher(self._nlp.vocab, attr=self.attribute) if self.attribute else PhraseMatcher(self._nlp.vocab)
 
     def get_phrase_matcher_object(self):

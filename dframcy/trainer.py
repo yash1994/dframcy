@@ -16,7 +16,6 @@ from spacy.cli.evaluate import evaluate
 from spacy.util import minibatch, compounding
 
 from dframcy.dframcy import utils
-from dframcy.language_model import LanguageModel
 
 messenger = Printer()
 
@@ -42,7 +41,7 @@ class DframeConverter(object):
         self.train_path = train_path
         self.dev_path = dev_path
         self.dev_path = self.dev_path
-        self._nlp = LanguageModel(language_model).get_nlp()
+        self._nlp = spacy.load(language_model)
         self.pipeline = pipeline
 
     def convert(self, data_path, nlp, data_type='training'):

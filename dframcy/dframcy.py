@@ -6,15 +6,21 @@ from spacy.pipeline import EntityRuler
 from cytoolz import merge_with
 
 from dframcy import utils
-from dframcy.language_model import LanguageModel
 
 
-class DframCy(LanguageModel):
+class DframCy(object):
     """
     Dataframe integration with spaCy's linguistic annotations.
     """
-    def __init__(self, nlp_model):
-        super(DframCy, self).__init__(nlp_model)
+    def __init__(self, nlp_pipeline):
+        """
+        :param nlp_pipeline: nlp pipeline to be used (i.e. language model).
+        """
+        self._nlp = nlp_pipeline
+
+    @property
+    def nlp(self):
+        return self._nlp
 
     @staticmethod
     def get_additional_token_attributes(attribute, doc):
@@ -124,8 +130,6 @@ class DframCy(LanguageModel):
         official doc: https://spacy.io/api/entityruler
         :param patterns: list or list of lists of token/phrase based patterns
         """
-        if not self._nlp:
-            self._nlp = self.create_nlp_pipeline()
         ruler = EntityRuler(self._nlp)
         ruler.add_patterns(patterns)
         self._nlp.add_pipe(ruler)

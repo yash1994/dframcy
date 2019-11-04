@@ -1,8 +1,8 @@
 # DframCy
 [![Package Version](https://img.shields.io/pypi/v/dframcy.svg?&service=github)](https://pypi.python.org/pypi/dframcy/)
 [![Python 3.6](https://img.shields.io/badge/python-3.6-blue.svg)](https://www.python.org/downloads/release/python-360/) 
-[![Build Status](https://travis-ci.org/yash1994/dframcy.svg?branch=master)](https://travis-ci.org/yash1994/dframcy) 
-[![Coverage Status](https://coveralls.io/repos/github/yash1994/dframcy/badge.svg?&service=github)](https://coveralls.io/github/yash1994/dframcy)
+[![Build Status](https://travis-ci.org/yash1994/dframcy.svg?branch=development)](https://travis-ci.org/yash1994/dframcy) 
+[![Coverage Status](https://coveralls.io/repos/github/yash1994/dframcy/badge.svg?branch=development)](https://coveralls.io/github/yash1994/dframcy?branch=development)
 
 DframCy is a light-weight utility module to integrate Pandas Dataframe to spaCy's linguistic annotation and training tasks. DframCy provides clean APIs to convert spaCy's linguistic annotations, Matcher and PhraseMatcher information to Pandas dataframe, also supports training and evaluation of NLP pipeline from CSV/XLXS/XLS without any changes to spaCy's underlying APIs.
 
@@ -36,8 +36,12 @@ python setup.py install
 #### Linguistic Annotations
 Get linguistic annotation in the dataframe. For linguistic annotations (dataframe column names) refer to [spaCy's Token API](https://spacy.io/api/token) document.
 ```python
+import spacy
 from dframcy import DframCy
-dframcy = DframCy("en_core_web_sm")
+
+nlp = spacy.load("en_core_web_sm")
+
+dframcy = DframCy(nlp)
 doc = dframcy.nlp(u"Apple is looking at buying U.K. startup for $1 billion")
 
 # default columns: ['id', 'text', 'start', 'end', 'pos', 'tag', 'dep', 'head', 'label'] 
@@ -52,15 +56,19 @@ token_annotation_dataframe, entity_dataframe = dframcy.to_dataframe(doc, separat
 #### Rule-Based Matching
 ```python
 # Token-based Matching
+import spacy
+
+nlp = spacy.load("en_core_web_sm")
+
 from dframcy.matcher import DframCyMatcher, DframCyPhraseMatcher
-dframcy_matcher = DframCyMatcher("en_core_web_sm")
+dframcy_matcher = DframCyMatcher(nlp)
 pattern = [{"LOWER": "hello"}, {"IS_PUNCT": True}, {"LOWER": "world"}]
 dframcy_matcher.add("HelloWorld", None, pattern)
 doc = dframcy_matcher.nlp("Hello, world! Hello world!")
 matches_dataframe = dframcy_matcher(doc)
 
 # Phrase Matching
-dframcy_phrase_matcher = DframCyPhraseMatcher("en_core_web_sm")
+dframcy_phrase_matcher = DframCyPhraseMatcher(nlp)
 terms = [u"Barack Obama", u"Angela Merkel",u"Washington, D.C."]
 patterns = [dframcy_phrase_matcher.get_nlp().make_doc(text) for text in terms]
 dframcy_phrase_matcher.add("TerminologyList", None, *patterns)
@@ -80,4 +88,7 @@ dframcy train -l en -o spacy_models -t train.csv -d test.csv
 
 # evaluate
 dframcy evaluate -m spacy_model/ -d test.csv
+
+# train text classifier
+dframcy textcat -o spacy_model/ -t data/textcat_training.csv -d data/textcat_training.csv
 ```
