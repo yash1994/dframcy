@@ -343,7 +343,8 @@ class DframeTrainClassifier(object):
             messenger.warn("Found following additional labels in test set: {}".
                            format(", ".join(list(additional_labels))))
             messenger.info("Removing test instances having additional labels from test set")
-            testing_dataframe = testing_dataframe[testing_dataframe.labels not in additional_labels]
+            for add_label in additional_labels:
+                testing_dataframe = testing_dataframe[testing_dataframe.labels == add_label]
 
         for label in unique_train_labels:
             self.textcat.add_label(label)

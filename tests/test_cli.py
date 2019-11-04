@@ -8,6 +8,7 @@ import os
 import shutil
 import operator
 from jsondiff import diff
+import pandas as pd
 from dframcy.trainer import DframeConverter, DframeTrainer, DframeEvaluator, DframeTrainClassifier
 
 
@@ -1141,4 +1142,26 @@ def test_cli_textcat_training(input_csv_file):
     test_text = "This movie sucked"
     dframe_textcat_classifier.begin_training()
     doc = dframe_textcat_classifier.nlp(test_text)
-    assert max(doc.cats.items(), key=operator.itemgetter(1))[0] in ['NEG', 'POS']
+    assert max(doc.cats.items(), key=operator.itemgetter(1))[0] in ["NEG", "POS"]
+
+
+@pytest.mark.parametrize("input_csv_file", ["data/textcat_training.csv"])
+def test_cli_textcat_training_multiclass(input_csv_file):
+    if not os.path.exists("/tmp/dframcy_test"):
+        os.mkdir("/tmp/dframcy_test/")
+    training_csv = pd.read_csv(input_csv_file)
+    random_update = training_csv.sample(frac=0.15)
+    random_update["labels"] = "NEUTRAL"
+    training_csv.update(random_update)
+    training_csv.to_csv("/tmp/dframcy_test/textcat_multiclass_training.csv")
+    dframe_textcat_classifier = DframeTrainClassifier(
+        "/tmp/",
+        "/tmp/dframcy_test/textcat_multiclass_training.csv",
+        "/tmp/dframcy_test/textcat_multiclass_training.csv",
+        n_iter=1
+    )
+    test_text = "This movie sucked"
+    dframe_textcat_classifier.begin_training()
+    doc = dframe_textcat_classifier.nlp(test_text)
+    shutil.rmtree("/tmp/dframcy_test/")
+    assert max(doc.cats.items(), key=operator.itemgetter(1))[0] in ["NEG", "POS", "NEUTRAL"]
