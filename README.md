@@ -9,9 +9,9 @@ DframCy is a light-weight utility module to integrate Pandas Dataframe to spaCy'
 ## Getting Started
 DframCy can be easily installed. Just need to the following:
 ### Requirements
-* Python 3.6
+* Python 3.5 or later
 * Pandas
-* spaCy 2.2.0
+* spaCy >= 2.2.0
 
 Also need to download spaCy's language model:
 ```bash
