@@ -1,8 +1,8 @@
 # DframCy
 [![Package Version](https://img.shields.io/pypi/v/dframcy.svg?&service=github)](https://pypi.python.org/pypi/dframcy/)
 [![Python 3.6](https://img.shields.io/badge/python-3.6-blue.svg)](https://www.python.org/downloads/release/python-360/) 
-[![Build Status](https://travis-ci.org/yash1994/dframcy.svg?branch=development)](https://travis-ci.org/yash1994/dframcy) 
-[![Coverage Status](https://coveralls.io/repos/github/yash1994/dframcy/badge.svg?branch=development)](https://coveralls.io/github/yash1994/dframcy?branch=development)
+[![Build Status](https://travis-ci.org/yash1994/dframcy.svg?branch=master)](https://travis-ci.org/yash1994/dframcy) 
+[![Coverage Status](https://coveralls.io/repos/github/yash1994/dframcy/badge.svg?branch=master)](https://coveralls.io/github/yash1994/dframcy?branch=development)
 
 DframCy is a light-weight utility module to integrate Pandas Dataframe to spaCy's linguistic annotation and training tasks. DframCy provides clean APIs to convert spaCy's linguistic annotations, Matcher and PhraseMatcher information to Pandas dataframe, also supports training and evaluation of NLP pipeline from CSV/XLXS/XLS without any changes to spaCy's underlying APIs.
 
