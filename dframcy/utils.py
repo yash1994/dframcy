@@ -3,165 +3,102 @@ from ast import literal_eval
 from spacy.gold import biluo_tags_from_offsets, tags_to_entities
 from wasabi import Printer
 from scipy.sparse import coo_matrix
+
 messenger = Printer()
 
 
 def get_default_columns():
-    """
-    To get list of columns names to be default in annotation dataframe.
-    :return: list of columns names.
-    """
-    return [
-        'tokens.id',
-        'tokens.text',
-        'tokens.start',
-        'tokens.end',
-        'tokens.pos',
-        'tokens.tag',
-        'tokens.dep',
-        'tokens.head',
-        'ents.start',
-        'ents.end',
-        'ents.label']
+    return ["id", "text", "start", "end", "pos_", "tag_", "dep_", "head", "ent_type_"]
 
 
-def map_user_columns_names_with_default(user_columns):
-    """
-    To map user provided column names to specific format
-    :param user_columns: list, of user provided columns
-    :return: list, of specifically formatted column names
-    """
-    column_map = {
-        "id": "tokens.id",
-        "start": "tokens.start",
-        "end": "tokens.end",
-        "pos": "tokens.pos",
-        "tag": "tokens.tag",
-        "dep": "tokens.tag",
-        "head": "tokens.head",
-        "text": "tokens.text",
-        "lemma": "tokens.lemma",
-        "lower": "tokens.lower",
-        "shape": "tokens.shape",
-        "prefix": "tokens.prefix",
-        "suffix": "tokens.suffix",
-        "is_alpha": "tokens.is_alpha",
-        "is_ascii": "tokens.is_ascii",
-        "is_digit": "tokens.is_digit",
-        "is_lower": "tokens.is_lower",
-        "is_upper": "tokens.is_upper",
-        "is_title": "tokens.is_title",
-        "is_punct": "tokens.is_punct",
-        "is_left_punct": "tokens.is_left_punct",
-        "is_right_punct": "tokens.is_right_punct",
-        "is_space": "tokens.is_space",
-        "is_bracket": "tokens.is_bracket",
-        "is_quote": "tokens.is_quote",
-        "is_currency": "tokens.is_currency",
-        "like_url": "tokens.like_url",
-        "like_num": "tokens.like_num",
-        "like_email": "tokens.like_email",
-        "is_oov": "tokens.is_oov",
-        "is_stop": "tokens.is_stop",
-        "ancestors": "tokens.ancestors",
-        "conjuncts": "tokens.conjuncts",
-        "children": "tokens.children",
-        "lefts": "tokens.lefts",
-        "rights": "tokens.rights",
-        "n_lefts": "tokens.n_lefts",
-        "n_rights": "tokens.n_rights",
-        "is_sent_start": "tokens.is_sent_start",
-        "has_vector": "tokens.has_vector",
-        "vector": "tokens.vector",
-        "ent_start": "ents.start",
-        "ent_end": "ents.end",
-        "ent_label": "ents.label"}
-
-    user_defined_columns = []
-
-    for uc in user_columns:
-        try:
-            user_defined_columns.append(column_map[uc])
-        except KeyError:
-            messenger.fail("could not recognize given column name:'{}' so skipping it".format(uc))
-            continue
-
-    default_columns = get_default_columns()
-
-    additional_attributes = any([True if nc not in default_columns else False for nc in user_defined_columns])
-
-    return user_defined_columns, additional_attributes
-
-
-def additional_attributes_map(column):
-    """
-    To map column names of additional attributes to match spaCy's Token API.
-    :param column: list, of column names
-    :return: tuple, containing API info
-    """
-    attributes_map = {
-        "tokens.lemma": ("lemma_", False, 0),
-        "tokens.lower": ("lower_", False, 0),
-        "tokens.shape": ("shape_", False, 0),
-        "tokens.prefix": ("prefix_", False, 0),
-        "tokens.suffix": ("suffix_", False, 0),
-        "tokens.is_alpha": ("is_alpha", False, 0),
-        "tokens.is_ascii": ("is_ascii", False, 0),
-        "tokens.is_digit": ("is_digit", False, 0),
-        "tokens.is_lower": ("is_lower", False, 0),
-        "tokens.is_upper": ("is_upper", False, 0),
-        "tokens.is_title": ("is_title", False, 0),
-        "tokens.is_punct": ("is_punct", False, 0),
-        "tokens.is_left_punct": ("is_left_punct", False, 0),
-        "tokens.is_right_punct": ("is_right_punct", False, 0),
-        "tokens.is_space": ("is_space", False, 0),
-        "tokens.is_bracket": ("is_bracket", False, 0),
-        "tokens.is_quote": ("is_quote", False, 0),
-        "tokens.is_currency": ("is_currency", False, 0),
-        "tokens.like_url": ("like_url", False, 0),
-        "tokens.like_num": ("like_num", False, 0),
-        "tokens.like_email": ("like_email", False, 0),
-        "tokens.is_oov": ("is_oov", False, 0),
-        "tokens.is_stop": ("is_stop", False, 0),
-        "tokens.ancestors": ("ancestors", True, 2),
-        "tokens.conjuncts": ("conjuncts", True, 2),
-        "tokens.children": ("children", True, 2),
-        "tokens.lefts": ("lefts", True, 2),
-        "tokens.rights": ("rights", True, 2),
-        "tokens.n_lefts": ("n_lefts", False, 2),
-        "tokens.n_rights": ("n_rights", False, 2),
-        "tokens.is_sent_start": ("is_sent_start", False, 2),
-        "tokens.has_vector": ("has_vector", False, 2),
-        "tokens.vector": ("vector", False, 2)
+def get_spacy_token_class_config():
+    token_config = {
+        "PROPERTIES": [
+            "lefts",
+            "rights",
+            "n_lefts",
+            "subtree",
+            "children",
+            "n_rights",
+            "ancestors",
+            "conjuncts",
+            "has_vector",
+            "is_sent_start",
+        ],
+        "ATTRIBUTES": [
+            "text",
+            "head",
+            "pos_",
+            "tag_",
+            "dep_",
+            "orth_",
+            "norm_",
+            "lang_",
+            "lemma_",
+            "lower_",
+            "shape_",
+            "is_oov",
+            "ent_id_",
+            "prefix_",
+            "suffix_",
+            "is_stop",
+            "ent_iob_",
+            "is_alpha",
+            "is_ascii",
+            "is_digit",
+            "is_lower",
+            "is_upper",
+            "is_title",
+            "is_punct",
+            "is_space",
+            "is_quote",
+            "like_url",
+            "like_num",
+            "left_edge",
+            "ent_type_",
+            "right_edge",
+            "ent_kb_id_",
+            "is_bracket",
+            "like_email",
+            "is_currency",
+            "is_left_punct",
+            "is_right_punct",
+        ],
+        "ADDITIONAL_ATTRIBUTES": ["id", "start", "end"],
+        "INT_FORMAT_ATTRIBUTES": [
+            "pos",
+            "tag",
+            "dep",
+            "orth",
+            "norm",
+            "lang",
+            "lower",
+            "shape",
+            "ent_id",
+            "prefix",
+            "suffix",
+            "ent_iob",
+            "ent_type",
+        ],
     }
 
-    return attributes_map[column]
+    return token_config
 
 
-def merge_entity_details(json_doc):
-    """
-    To merge entity and token details provided by Doc.to_json() method.
-    :param json_doc: dictionary, returned by Doc.to_json()
-    :return: new dictionary
-    """
-    if "ents" in json_doc and json_doc["ents"]:
-        ents_dict = {str(ent["start"]) + "_" + str(ent["end"]): ent for ent in json_doc["ents"]}
+def check_columns_consistency(columns):
+    spacy_token_config = get_spacy_token_class_config()
+    consistent_column_names = []
+    for column_name in columns:
+        if column_name in spacy_token_config["PROPERTIES"]:
+            consistent_column_names.append((column_name, "property"))
+        elif column_name in spacy_token_config["ATTRIBUTES"]:
+            consistent_column_names.append((column_name, "attribute"))
+        elif column_name in spacy_token_config["ADDITIONAL_ATTRIBUTES"]:
+            consistent_column_names.append((column_name, "additional_attribute"))
+        elif column_name in spacy_token_config["INT_FORMAT_ATTRIBUTES"]:
+            consistent_column_names.append((column_name, "int_format_attribute"))
 
-        new_tokens_data_list = []
-
-        for token_data in json_doc["tokens"]:
-            if str(token_data["start"]) + "_" + str(token_data["end"]) in ents_dict:
-                token_data["label"] = ents_dict[str(token_data["start"]) + "_" + str(token_data["end"])]["label"]
-                new_tokens_data_list.append(token_data)
-            else:
-                token_data["label"] = None
-                new_tokens_data_list.append(token_data)
-        json_doc["tokens"] = new_tokens_data_list
-        json_doc["ents"] = True
-        return json_doc
-    else:
-        json_doc["ents"] = False
-        return json_doc
+    return consistent_column_names
 
 
 def get_training_pipeline_from_column_names(columns):
@@ -243,10 +180,18 @@ def dataframe_to_spacy_training_json_format(dataframe, nlp, pipline):
             for sentence in doc.sents:
                 sentence_tokens = []
 
-                assert len(sentence) <= len(token_orth), messenger.fail("number of token and token_orth field mismatch")
-                assert len(sentence) <= len(token_tag), messenger.fail("number of token and token_tag field mismatch")
-                assert len(sentence) <= len(token_head), messenger.fail("number of token and token_head field mismatch")
-                assert len(sentence) <= len(token_dep), messenger.fail("number of token and token_dep field mismatch")
+                assert len(sentence) <= len(token_orth), messenger.fail(
+                    "number of token and token_orth field mismatch"
+                )
+                assert len(sentence) <= len(token_tag), messenger.fail(
+                    "number of token and token_tag field mismatch"
+                )
+                assert len(sentence) <= len(token_head), messenger.fail(
+                    "number of token and token_head field mismatch"
+                )
+                assert len(sentence) <= len(token_dep), messenger.fail(
+                    "number of token and token_dep field mismatch"
+                )
 
                 for token_id, token in enumerate(sentence):
                     token_data = {
@@ -255,7 +200,7 @@ def dataframe_to_spacy_training_json_format(dataframe, nlp, pipline):
                         "tag": token_tag[token_id],
                         "head": int(token_head[token_id]),
                         "dep": token_dep[token_id],
-                        "ner": tags[token_id]
+                        "ner": tags[token_id],
                     }
                     sentence_tokens.append(token_data)
                 doc_sentences.append({"tokens": sentence_tokens})
@@ -266,14 +211,18 @@ def dataframe_to_spacy_training_json_format(dataframe, nlp, pipline):
             for sentence in doc.sents:
                 sentence_tokens = []
 
-                assert len(sentence) <= len(token_orth), messenger.fail("number of token and token_orth field mismatch")
-                assert len(sentence) <= len(token_tag), messenger.fail("number of token and token_tag field mismatch")
+                assert len(sentence) <= len(token_orth), messenger.fail(
+                    "number of token and token_orth field mismatch"
+                )
+                assert len(sentence) <= len(token_tag), messenger.fail(
+                    "number of token and token_tag field mismatch"
+                )
 
                 for token_id, token in enumerate(sentence):
                     token_data = {
                         "id": token_id,
                         "orth": token_orth[token_id],
-                        "tag": token_tag[token_id]
+                        "tag": token_tag[token_id],
                     }
                     sentence_tokens.append(token_data)
                 doc_sentences.append({"tokens": sentence_tokens})
@@ -284,8 +233,12 @@ def dataframe_to_spacy_training_json_format(dataframe, nlp, pipline):
             for sentence in doc.sents:
                 sentence_tokens = []
 
-                assert len(sentence) <= len(token_head), messenger.fail("number of token and token_head field mismatch")
-                assert len(sentence) <= len(token_dep), messenger.fail("number of token and token_dep field mismatch")
+                assert len(sentence) <= len(token_head), messenger.fail(
+                    "number of token and token_head field mismatch"
+                )
+                assert len(sentence) <= len(token_dep), messenger.fail(
+                    "number of token and token_dep field mismatch"
+                )
 
                 for token_id, token in enumerate(sentence):
                     token_data = {
@@ -293,7 +246,7 @@ def dataframe_to_spacy_training_json_format(dataframe, nlp, pipline):
                         "orth": token.orth_,
                         "tag": token.tag_,
                         "head": int(token_head[token_id]),
-                        "dep": token_dep[token_id]
+                        "dep": token_dep[token_id],
                     }
                     sentence_tokens.append(token_data)
                 doc_sentences.append({"tokens": sentence_tokens})
@@ -307,20 +260,14 @@ def dataframe_to_spacy_training_json_format(dataframe, nlp, pipline):
                         "tag": token.tag_,
                         "head": token.head.i - token.i,
                         "dep": token.dep_,
-                        "ner": tags[token.i]
+                        "ner": tags[token.i],
                     }
                     sentence_tokens.append(token_data)
                 doc_sentences.append({"tokens": sentence_tokens})
 
-        list_of_documents.append({
-            "id": _id,
-            "paragraphs": [
-                {
-                    "raw": doc.text,
-                    "sentences": doc_sentences
-                }
-            ]
-        })
+        list_of_documents.append(
+            {"id": _id, "paragraphs": [{"raw": doc.text, "sentences": doc_sentences}]}
+        )
     return list_of_documents
 
 
@@ -330,8 +277,10 @@ def confusion_matrix(prediction, target, label_map):
     target = np.asarray([inverse_label_map[i] for i in target])
 
     if len(label_map) == 2:
-        return coo_matrix((np.ones(target.shape[0], dtype=np.int64), (target, prediction)),
-                          shape=(len(label_map), len(label_map))).toarray()
+        return coo_matrix(
+            (np.ones(target.shape[0], dtype=np.int64), (target, prediction)),
+            shape=(len(label_map), len(label_map)),
+        ).toarray()
 
     true_positives = prediction == target
     true_positives_bins = target[true_positives]
@@ -339,7 +288,7 @@ def confusion_matrix(prediction, target, label_map):
     if len(true_positives_bins):
         tp_sum = np.bincount(true_positives_bins, minlength=len(label_map))
     else:
-        true_sum = prediction_sum = tp_sum = np.zeros(len(label_map))
+        tp_sum = np.zeros(len(label_map))
 
     if len(prediction):
         prediction_sum = np.bincount(prediction, minlength=len(label_map))
@@ -361,15 +310,18 @@ def confusion_matrix(prediction, target, label_map):
 
 def precision_recall_fscore(_confusion_matrix):
 
-    if _confusion_matrix.ndim == 2: # binary classification
+    if _confusion_matrix.ndim == 2:  # binary classification
         tp = _confusion_matrix[1][1]
-        tn = _confusion_matrix[0][0]
         fp = _confusion_matrix[0][1]
         fn = _confusion_matrix[1][0]
 
         precision = tp / (tp + fp) if tp + fp > 0 else 0
         recall = tp / (tp + fn) if tp + fn > 0 else 0
-        f_score = 2 * (precision * recall) / (precision + recall) if (precision + recall) > 0 else 0
+        f_score = (
+            2 * (precision * recall) / (precision + recall)
+            if (precision + recall) > 0
+            else 0
+        )
 
         return precision, recall, f_score
     else:

@@ -26,11 +26,13 @@ class DframeConverter(object):
     (https://spacy.io/api/annotation#json-input).
     """
 
-    def __init__(self,
-                 train_path,
-                 dev_path,
-                 language_model="en_core_web_sm",
-                 pipeline="tagger,parser,ner"):
+    def __init__(
+        self,
+        train_path,
+        dev_path,
+        language_model="en_core_web_sm",
+        pipeline="tagger,parser,ner",
+    ):
         """
         initialize JSON formatter.
         :param train_path: str, file path or directory path containing multiple training data files
@@ -40,11 +42,10 @@ class DframeConverter(object):
         """
         self.train_path = train_path
         self.dev_path = dev_path
-        self.dev_path = self.dev_path
         self._nlp = spacy.load(language_model)
         self.pipeline = pipeline
 
-    def convert(self, data_path, nlp, data_type='training'):
+    def convert(self, data_path, nlp, data_type="training"):
         """
         To convert xls/csv training data to JSON format.
         :param data_path: str, single file or multiple files (directory) to be converted
@@ -61,7 +62,12 @@ class DframeConverter(object):
                     training_data = excel_file.parse("Sheet1")
                 else:
                     training_data = None
-                    messenger.fail("Unknown file format for {} data file:'{}'".format(data_type, data_path), exits=-1)
+                    messenger.fail(
+                        "Unknown file format for {} data file:'{}'".format(
+                            data_type, data_path
+                        ),
+                        exits=-1,
+                    )
             elif os.path.isdir(data_path):
                 dataframe_list = []
                 for file_name in os.listdir(data_path):
@@ -72,24 +78,38 @@ class DframeConverter(object):
                         excel_file = pd.ExcelFile(file_path)
                         dataframe_list.append(excel_file.parse("Sheet1"))
                     else:
-                        messenger.warn("Unknown file format for {} data file:{}, skipping".format(data_type, file_path))
-                training_data = pd.concat(dataframe_list, join='inner', ignore_index=True)
+                        messenger.warn(
+                            "Unknown file format for {} data file:{}, skipping".format(
+                                data_type, file_path
+                            )
+                        )
+                training_data = pd.concat(
+                    dataframe_list, join="inner", ignore_index=True
+                )
 
-            training_pipeline = utils.get_training_pipeline_from_column_names(training_data.columns)
-            training_pipeline = training_pipeline if len(training_pipeline.split(",")) <= len(self.pipeline.split(",")) \
+            training_pipeline = utils.get_training_pipeline_from_column_names(
+                training_data.columns
+            )
+            training_pipeline = (
+                training_pipeline
+                if len(training_pipeline.split(",")) <= len(self.pipeline.split(","))
                 else self.pipeline
+            )
 
             json_format = utils.dataframe_to_spacy_training_json_format(
-                training_data,
-                nlp,
-                training_pipeline)
-            json_formatted_file_path = data_path.rstrip(".csv").rstrip(".xls").rstrip(".xlsx") + ".json"
+                training_data, nlp, training_pipeline
+            )
+            json_formatted_file_path = (
+                data_path.rstrip(".csv").rstrip(".xls").rstrip(".xlsx") + ".json"
+            )
 
             with io.open(json_formatted_file_path, "w") as file:
                 json.dump(json_format, file)
             return json_formatted_file_path, training_pipeline
         else:
-            messenger.fail("{} file/directory path does not exist".format(data_type), exits=-1)
+            messenger.fail(
+                "{} file/directory path does not exist".format(data_type), exits=-1
+            )
 
 
 class DframeTrainer(DframeConverter):
@@ -97,34 +117,36 @@ class DframeTrainer(DframeConverter):
     Wrapper class over spaCy's CLI training from CSV/XLS files.
     """
 
-    def __init__(self,
-                 lang,
-                 output_path,
-                 train_path,
-                 dev_path,
-                 debug_data_first=True,
-                 raw_text=None,
-                 base_model=None,
-                 pipeline="tagger,parser,ner",
-                 vectors=None,
-                 n_iter=30,
-                 n_early_stopping=None,
-                 n_examples=0,
-                 use_gpu=-1,
-                 version="0.0.0",
-                 meta_path=None,
-                 init_tok2vec=None,
-                 parser_multitasks="",
-                 entity_multitasks="",
-                 noise_level=0.0,
-                 orth_variant_level=0.0,
-                 eval_beam_widths="",
-                 gold_preproc=False,
-                 learn_tokens=False,
-                 textcat_multilabel=False,
-                 textcat_arch="bow",
-                 textcat_positive_label=None,
-                 verbose=False):
+    def __init__(
+        self,
+        lang,
+        output_path,
+        train_path,
+        dev_path,
+        debug_data_first=True,
+        raw_text=None,
+        base_model=None,
+        pipeline="tagger,parser,ner",
+        vectors=None,
+        n_iter=30,
+        n_early_stopping=None,
+        n_examples=0,
+        use_gpu=-1,
+        version="0.0.0",
+        meta_path=None,
+        init_tok2vec=None,
+        parser_multitasks="",
+        entity_multitasks="",
+        noise_level=0.0,
+        orth_variant_level=0.0,
+        eval_beam_widths="",
+        gold_preproc=False,
+        learn_tokens=False,
+        textcat_multilabel=False,
+        textcat_arch="bow",
+        textcat_positive_label=None,
+        verbose=False,
+    ):
         """
         for parameters refer to: https://spacy.io/api/cli#train
         """
@@ -159,19 +181,27 @@ class DframeTrainer(DframeConverter):
         self.verbose = verbose
 
         if self.train_path != self.dev_path:
-            self.train_path, training_pipeline = self.convert(self.train_path, self._nlp, "training")
-            self.dev_path, evaluation_pipeline = self.convert(self.dev_path, self._nlp, "validation")
+            self.train_path, training_pipeline = self.convert(
+                self.train_path, self._nlp, "training"
+            )
+            self.dev_path, evaluation_pipeline = self.convert(
+                self.dev_path, self._nlp, "validation"
+            )
         else:
             messenger.warn("Same Training and validation data")
-            self.train_path, training_pipeline = self.convert(self.train_path, self._nlp, "training")
+            self.train_path, training_pipeline = self.convert(
+                self.train_path, self._nlp, "training"
+            )
             self.dev_path = self.train_path
             evaluation_pipeline = training_pipeline
 
         self.pipeline = training_pipeline if training_pipeline else self.pipeline
-        assert training_pipeline == evaluation_pipeline, messenger.fail("Training({}) and Evaluation({}) pipeline "
-                                                                        "does not "
-                                                                        "match".format(training_pipeline,
-                                                                                       evaluation_pipeline), exits=-1)
+        assert training_pipeline == evaluation_pipeline, messenger.fail(
+            "Training({}) and Evaluation({}) pipeline "
+            "does not "
+            "match".format(training_pipeline, evaluation_pipeline),
+            exits=-1,
+        )
 
     def begin_training(self):
         """
@@ -183,7 +213,7 @@ class DframeTrainer(DframeConverter):
                 Path(self.train_path),
                 Path(self.dev_path),
                 self.base_model,
-                self.pipeline
+                self.pipeline,
             )
 
         train(
@@ -212,7 +242,8 @@ class DframeTrainer(DframeConverter):
             self.textcat_multilabel,
             self.textcat_arch,
             self.textcat_positive_label,
-            self.verbose)
+            self.verbose,
+        )
 
 
 class DframeEvaluator(DframeConverter):
@@ -220,14 +251,16 @@ class DframeEvaluator(DframeConverter):
     Wrapper class over spaCy's CLI model evaluation from CSV/XLS files.
     """
 
-    def __init__(self,
-                 model,
-                 data_path,
-                 gpu_id=-1,
-                 gold_preproc=False,
-                 displacy_path=None,
-                 displacy_limit=25,
-                 return_scores=False):
+    def __init__(
+        self,
+        model,
+        data_path,
+        gpu_id=-1,
+        gold_preproc=False,
+        displacy_path=None,
+        displacy_limit=25,
+        return_scores=False,
+    ):
         """
         for parameters refer to: https://spacy.io/api/cli#evaluate
         """
@@ -241,7 +274,7 @@ class DframeEvaluator(DframeConverter):
         self.displacy_limit = displacy_limit
         self.return_scores = return_scores
 
-        self.data_path, pipeline = self.convert(self.data_path, self._nlp, "evaluation")
+        self.data_path = self.convert(self.data_path, self._nlp, "evaluation")[0]
 
     def begin_evaluation(self):
         """
@@ -254,7 +287,7 @@ class DframeEvaluator(DframeConverter):
             self.gold_preproc,
             self.displacy_path,
             self.displacy_limit,
-            self.return_scores
+            self.return_scores,
         )
 
 
@@ -263,16 +296,18 @@ class DframeTrainClassifier(object):
     To train text classifier from CSV file.
     """
 
-    def __init__(self,
-                 output_path,
-                 train_path,
-                 dev_path,
-                 model=None,
-                 n_iter=20,
-                 init_tok2vec=None,
-                 exclusive_classes=False,
-                 architecture="ensemble",
-                 train_split=0.8):
+    def __init__(
+        self,
+        output_path,
+        train_path,
+        dev_path,
+        model=None,
+        n_iter=20,
+        init_tok2vec=None,
+        exclusive_classes=False,
+        architecture="ensemble",
+        train_split=0.8,
+    ):
 
         self.output_path = output_path
         self.train_path = train_path
@@ -293,7 +328,10 @@ class DframeTrainClassifier(object):
         if "textcat" not in self.nlp.pipe_names:
             self.textcat = self.nlp.create_pipe(
                 "textcat",
-                config={"exclusive_classes": self.exclusive_classes, "architecture": self.architecture}
+                config={
+                    "exclusive_classes": self.exclusive_classes,
+                    "architecture": self.architecture,
+                },
             )
             self.nlp.add_pipe(self.textcat, last=True)
         else:
@@ -305,7 +343,9 @@ class DframeTrainClassifier(object):
             messenger.fail("Input file path does not exist", exits=-1)
 
         if not os.path.exists(self.dev_path):
-            messenger.warn("Validation file path does not exist, splitting training data for validation")
+            messenger.warn(
+                "Validation file path does not exist, splitting training data for validation"
+            )
             self.dev_path = self.train_path
 
         if self.output_path is not None:
@@ -318,7 +358,9 @@ class DframeTrainClassifier(object):
             testing_dataframe = pd.read_csv(self.dev_path)
         else:
             messenger.warn("Same Training and validation data")
-            messenger.info("Train and test data will be split in ratio:{}".format(self.train_split))
+            messenger.info(
+                "Train and test data will be split in ratio:{}".format(self.train_split)
+            )
             dataset = pd.read_csv(self.train_path)
             dataset = dataset.sample(frac=1).reset_index(drop=True)  # shuffle data
             self.train_split = int(dataset.shape[0] * self.train_split)
@@ -326,10 +368,16 @@ class DframeTrainClassifier(object):
             training_dataframe = datasets[0]
             testing_dataframe = datasets[1]
 
-        if not ("text" in training_dataframe.columns and "labels" in training_dataframe.columns):
+        if not (
+            "text" in training_dataframe.columns
+            and "labels" in training_dataframe.columns
+        ):
             messenger.fail("Inconsistent column names in training CSV", exits=-1)
 
-        if not ("text" in testing_dataframe.columns and "labels" in testing_dataframe.columns):
+        if not (
+            "text" in testing_dataframe.columns
+            and "labels" in testing_dataframe.columns
+        ):
             messenger.fail("Inconsistent column names in validation CSV", exits=-1)
 
         unique_train_labels = list(pd.unique(training_dataframe["labels"]))
@@ -340,22 +388,39 @@ class DframeTrainClassifier(object):
 
         if len(set(unique_train_labels) - set(unique_test_labels)) != 0:
             additional_labels = set(unique_train_labels) - set(unique_test_labels)
-            messenger.warn("Found following additional labels in test set: {}".
-                           format(", ".join(list(additional_labels))))
-            messenger.info("Removing test instances having additional labels from test set")
+            messenger.warn(
+                "Found following additional labels in test set: {}".format(
+                    ", ".join(list(additional_labels))
+                )
+            )
+            messenger.info(
+                "Removing test instances having additional labels from test set"
+            )
             for add_label in additional_labels:
-                testing_dataframe = testing_dataframe[testing_dataframe.labels == add_label]
+                testing_dataframe = testing_dataframe[
+                    testing_dataframe.labels == add_label
+                ]
 
         for label in unique_train_labels:
             self.textcat.add_label(label)
 
-        training_text, training_label = training_dataframe["text"].tolist(), training_dataframe["labels"].tolist()
-        testing_text, testing_label = testing_dataframe["text"].tolist(), testing_dataframe["labels"].tolist()
+        training_text, training_label = (
+            training_dataframe["text"].tolist(),
+            training_dataframe["labels"].tolist(),
+        )
+        testing_text, testing_label = (
+            testing_dataframe["text"].tolist(),
+            testing_dataframe["labels"].tolist(),
+        )
 
-        training_cats = [{label: 1 if label == _label else 0 for label in unique_train_labels} for _label in
-                         training_label]
-        testing_cats = [{label: 1 if label == _label else 0 for label in unique_train_labels} for _label in
-                        testing_label]
+        training_cats = [
+            {label: 1 if label == _label else 0 for label in unique_train_labels}
+            for _label in training_label
+        ]
+        testing_cats = [
+            {label: 1 if label == _label else 0 for label in unique_train_labels}
+            for _label in testing_label
+        ]
         return training_text, training_cats, testing_text, testing_cats
 
     def begin_training(self):
@@ -380,11 +445,17 @@ class DframeTrainClassifier(object):
             batches = minibatch(train_data, batch_sizes)
             for batch in batches:
                 texts, annotations = zip(*batch)
-                self.nlp.update(texts, annotations, sgd=optimizer, drop=0.2, losses=losses)
+                self.nlp.update(
+                    texts, annotations, sgd=optimizer, drop=0.2, losses=losses
+                )
             with self.textcat.model.use_params(optimizer.averages):
                 # evaluate on the dev data split off in load_data()
                 p, r, f = self.evaluate(self.nlp.tokenizer, test_text, test_label)
-                print("{0:.3f}\t{1:.3f}\t{2:.3f}\t{3:.3f}".format(losses["textcat"], p, r, f))
+                print(
+                    "{0:.3f}\t{1:.3f}\t{2:.3f}\t{3:.3f}".format(
+                        losses["textcat"], p, r, f
+                    )
+                )
         with self.nlp.use_params(optimizer.averages):
             self.nlp.to_disk(self.output_path)
         messenger.info("Saved model to {}".format(self.output_path))
@@ -392,7 +463,10 @@ class DframeTrainClassifier(object):
     def evaluate(self, tokenizer, test_texts, test_cats):
         docs = (tokenizer(text) for text in test_texts)
         true_labels = list(map(lambda x: [k for k, v in x.items() if v][0], test_cats))
-        pred_labels = [max(doc.cats.items(), key=operator.itemgetter(1))[0] for doc in self.textcat.pipe(docs)]
+        pred_labels = [
+            max(doc.cats.items(), key=operator.itemgetter(1))[0]
+            for doc in self.textcat.pipe(docs)
+        ]
 
         conf_mat = utils.confusion_matrix(pred_labels, true_labels, self.label_map)
 
