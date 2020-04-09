@@ -20,10 +20,21 @@ class DframCy(object):
 
     @property
     def nlp(self):
+        """
+        To get texted nlped
+        :return: Spacy's Doc object
+        """
         return self._nlp
 
     @staticmethod
     def get_token_attribute_value(token, attribute_name, _type):
+        """
+        To get value of specific attribute of spacy's Token class
+        :param token: token object of class Token
+        :param attribute_name: name attribute for which value is required
+        :param _type: type of class attribute (property, attribute)
+        :retrun: attribute value
+        """
         if _type == "attribute" or _type == "int_format_attribute":
             value = getattr(token, attribute_name)
             if attribute_name in ["head", "left_edge", "right_edge"]:
@@ -43,10 +54,15 @@ class DframCy(object):
                 return getattr(token, "idx")
             elif attribute_name == "end":
                 return getattr(token, "idx") + len(token)
-        else:
-            return None
 
     def get_token_attribute_dict(self, doc, consistent_columns):
+        """
+        To get attribute dictionary for sequence of Token object in Doc
+        :param doc: Doc object
+        :param consistent_columns: name attributes required with its type
+        :return: python dictionary containing attributes names as keys
+                and list of all token values as value.
+        """
         token_attribute_dictionary = {}
         for token in doc:
             for column_name in consistent_columns:
@@ -109,7 +125,7 @@ class DframCy(object):
 
         tokens_dataframe.drop(columns=["token_id"], inplace=True)
 
-        if not doc.ents:
+        if not doc.ents and "token_ent_type_" in tokens_dataframe.columns:
             tokens_dataframe.drop(columns=["token_ent_type_"], inplace=True)
 
         if separate_entity_dframe:

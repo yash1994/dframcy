@@ -8,10 +8,18 @@ messenger = Printer()
 
 
 def get_default_columns():
+    """
+    Default columns for dataframe
+    :return: list of default attributes
+    """
     return ["id", "text", "start", "end", "pos_", "tag_", "dep_", "head", "ent_type_"]
 
 
 def get_spacy_token_class_config():
+    """
+    Configuration of spacy's Token class attribute
+    :return: config dictionary of attributes/properties
+    """
     token_config = {
         "PROPERTIES": [
             "lefts",
@@ -86,6 +94,12 @@ def get_spacy_token_class_config():
 
 
 def check_columns_consistency(columns):
+    """
+    Checks consistency of column names passed by users
+    with spacy's Token class.
+    :param columns: list of column names
+    :return: list of consistent column names
+    """
     spacy_token_config = get_spacy_token_class_config()
     consistent_column_names = []
     for column_name in columns:
@@ -97,6 +111,8 @@ def check_columns_consistency(columns):
             consistent_column_names.append((column_name, "additional_attribute"))
         elif column_name in spacy_token_config["INT_FORMAT_ATTRIBUTES"]:
             consistent_column_names.append((column_name, "int_format_attribute"))
+        else:
+            messenger.warn("Column name '{}' not consistent with spacy's Token class".format(column_name))    
 
     return consistent_column_names
 

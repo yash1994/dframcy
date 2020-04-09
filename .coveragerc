@@ -18,3 +18,4 @@ exclude_lines =
     KeyError
     IOError
     if __name__ == .__main__.:
+    messenger

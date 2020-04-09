@@ -43,6 +43,17 @@ def test_default_columns(text):
     )
     assert_frame_equal(dataframe, results)
 
+@pytest.mark.parametrize("text", ["bright red apples on the tree"])
+def test_unknown_column_value(text):
+    doc = dframcy.nlp(text)
+    dataframe = dframcy.to_dataframe(doc, columns=["id", "start", "end", "apple"])
+    results = pd.DataFrame(
+        {
+            "token_start": [0, 7, 11, 18, 21, 25],
+            "token_end": [6, 10, 17, 20, 24, 29]
+        }
+    )
+    assert_frame_equal(dataframe, results)
 
 def test_all_columns_thoroughly():
     doc = dframcy.nlp(
