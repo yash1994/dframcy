@@ -54,6 +54,8 @@ class DframCy(object):
                 return getattr(token, "idx")
             elif attribute_name == "end":
                 return getattr(token, "idx") + len(token)
+        elif _type == "custom_attributes":
+            return getattr(getattr(token, "_"), attribute_name)
 
     def get_token_attribute_dict(self, doc, consistent_columns):
         """
@@ -94,14 +96,16 @@ class DframCy(object):
             entity_details_dict["ent_label"].append(ent.label_)
         return entity_details_dict
 
-    def to_dataframe(self, doc, columns=None, separate_entity_dframe=False):
+    def to_dataframe(
+        self, doc, columns=None, separate_entity_dframe=False, custom_attributes=None
+    ):
         """
         Convert Linguistic annotations for text into pandas dataframe
         :param doc: spacy container for linguistic annotations.
-        :param columns: list of str, name of columns to be included in dataframe (default: ["tokens.id", "tokens.text",
-        "tokens.start", "tokens.end", "tokens.pos", "tokens.tag", "tokens.dep", "tokens.head", "ents.start",
-        "ents.end", "ents.label"])
+        :param columns: list of str, name of columns to be included in dataframe (default: 
+        ["id", "text", "start", "end", "pos_", "tag_", "dep_", "head", "ent_type_"])
         :param separate_entity_dframe: bool, for separate entity dataframe (default: False)
+        :param custom_attributes: list, for custom attribute
         :return: dataframe, dataframe containing linguistic annotations
         """
         if columns is None:
@@ -111,6 +115,11 @@ class DframCy(object):
             columns = ["id"] + columns
 
         consistent_columns = utils.check_columns_consistency(columns)
+
+        if custom_attributes:
+            consistent_columns += [
+                (attr, "custom_attributes") for attr in custom_attributes
+            ]
 
         token_attribute_dictionary = self.get_token_attribute_dict(
             doc, consistent_columns

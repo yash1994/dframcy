@@ -43,17 +43,36 @@ def test_default_columns(text):
     )
     assert_frame_equal(dataframe, results)
 
+
 @pytest.mark.parametrize("text", ["bright red apples on the tree"])
 def test_unknown_column_value(text):
     doc = dframcy.nlp(text)
     dataframe = dframcy.to_dataframe(doc, columns=["id", "start", "end", "apple"])
     results = pd.DataFrame(
+        {"token_start": [0, 7, 11, 18, 21, 25], "token_end": [6, 10, 17, 20, 24, 29]}
+    )
+    assert_frame_equal(dataframe, results)
+
+
+@pytest.mark.parametrize("text", ["I have an apple"])
+def test_custom_attribute(text):
+    from spacy.tokens import Token
+
+    fruit_getter = lambda token: token.text in ("apple", "pear", "banana")
+    Token.set_extension("is_fruit", getter=fruit_getter)
+    doc = dframcy.nlp(text)
+    dataframe = dframcy.to_dataframe(
+        doc, columns=["id", "start", "end"], custom_attributes=["is_fruit"]
+    )
+    results = pd.DataFrame(
         {
-            "token_start": [0, 7, 11, 18, 21, 25],
-            "token_end": [6, 10, 17, 20, 24, 29]
+            "token_start": [0, 2, 7, 10],
+            "token_end": [1, 6, 9, 15],
+            "token_is_fruit": [False, False, False, True],
         }
     )
     assert_frame_equal(dataframe, results)
+
 
 def test_all_columns_thoroughly():
     doc = dframcy.nlp(

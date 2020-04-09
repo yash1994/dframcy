@@ -112,7 +112,11 @@ def check_columns_consistency(columns):
         elif column_name in spacy_token_config["INT_FORMAT_ATTRIBUTES"]:
             consistent_column_names.append((column_name, "int_format_attribute"))
         else:
-            messenger.warn("Column name '{}' not consistent with spacy's Token class".format(column_name))    
+            messenger.warn(
+                "Column name '{}' not consistent with spacy's Token class".format(
+                    column_name
+                )
+            )
 
     return consistent_column_names
 
