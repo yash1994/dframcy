@@ -7,6 +7,5 @@ pytest
 pytest-cov
 tox-travis
 pandas
-codecov
 xlrd
 spacy==2.2.0
