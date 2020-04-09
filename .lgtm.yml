@@ -1,9 +1,0 @@
-path_classifiers:
-  test:
-    - tests
-extraction:
-  python:
-    python_setup:
-      version: 3
-    before_index:
-      - python -m spacy download en

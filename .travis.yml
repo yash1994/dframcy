@@ -9,4 +9,4 @@ install:
 script:
   - tox -vv
 after_success:
-  - coveralls
+  - codecove

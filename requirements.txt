@@ -5,9 +5,8 @@ click
 wasabi
 pytest
 pytest-cov
-python-coveralls
 tox-travis
 pandas
-cytoolz
+codecov
 xlrd
 spacy==2.2.0
