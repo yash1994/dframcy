@@ -10,6 +10,7 @@ class DframCyMatcher(object):
     Dataframe wrapper class over spaCy's Matcher
     https://spacy.io/api/matcher
     """
+
     def __init__(self, nlp_pipeline):
         """
         :param nlp_pipeline: nlp pipeline to be used (i.e. language model).
@@ -109,6 +110,7 @@ class DframCyPhraseMatcher(object):
         Dataframe wrapper class over spaCy's PhraseMatcher
         https://spacy.io/api/phrasematcher
     """
+
     def __init__(self, nlp_pipeline, attr=None):
         """
         :param nlp_pipeline: nlp pipeline to be used (i.e. language model).
@@ -165,7 +167,11 @@ class DframCyPhraseMatcher(object):
         To get spaCy's phrase matcher class object (used for testing only).
         :return: phrase matcher object
         """
-        return PhraseMatcher(self._nlp.vocab, attr=self.attribute) if self.attribute else PhraseMatcher(self._nlp.vocab)
+        return (
+            PhraseMatcher(self._nlp.vocab, attr=self.attribute)
+            if self.attribute
+            else PhraseMatcher(self._nlp.vocab)
+        )
 
     def get_phrase_matcher_object(self):
         """

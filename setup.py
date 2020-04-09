@@ -29,8 +29,6 @@ setup(
     keywords=["spacy", "dataframe", "pandas"],
     packages=find_packages(),
     install_requires=REQUIRES,
-    tests_require=['pytest'],
-    entry_points={
-        "console_scripts": ["dframcy=dframcy.cli:main"],
-    }
+    tests_require=["pytest"],
+    entry_points={"console_scripts": ["dframcy=dframcy.cli:main"],},
 )

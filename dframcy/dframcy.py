@@ -3,7 +3,6 @@ from __future__ import unicode_literals
 
 import pandas as pd
 from spacy.pipeline import EntityRuler
-from cytoolz import merge_with
 
 from dframcy import utils
 
@@ -12,6 +11,7 @@ class DframCy(object):
     """
     Dataframe integration with spaCy's linguistic annotations.
     """
+
     def __init__(self, nlp_pipeline):
         """
         :param nlp_pipeline: nlp pipeline to be used (i.e. language model).
@@ -20,36 +20,71 @@ class DframCy(object):
 
     @property
     def nlp(self):
+        """
+        To get texted nlped
+        :return: Spacy's Doc object
+        """
         return self._nlp
 
     @staticmethod
-    def get_additional_token_attributes(attribute, doc):
+    def get_token_attribute_value(token, attribute_name, _type):
         """
-        To get additional (token information other than doc.json()) token class attributes.
-        official doc: https://spacy.io/api/token
-        type: 0 for class attribute, 1 for class method, 2 for class property
-        :param attribute: tuple(name, type, is_nested) i.e. ("is_punct", 0, False)
-        :param doc: spacy container for linguistic annotations.
-        :return: list of or list of lists of attribute values
+        To get value of specific attribute of spacy's Token class
+        :param token: token object of class Token
+        :param attribute_name: name attribute for which value is required
+        :param _type: type of class attribute (property, attribute)
+        :retrun: attribute value
         """
-        _name = attribute[0]
-        _type = attribute[2]
-        _is_nested = attribute[1]
-
-        values = [getattr(token, _name) for token in doc]
-
-        if _is_nested:
-            if isinstance(list(values[0]), list):
-                flattened_values = []
-                for v in values:
-                    flattened_values.append([i.text for i in v])
+        if _type == "attribute" or _type == "int_format_attribute":
+            value = getattr(token, attribute_name)
+            if attribute_name in ["head", "left_edge", "right_edge"]:
+                return value.text
             else:
-                flattened_values = [v.text for v in values]
-            values = flattened_values
-        return values
+                return value
+        elif _type == "property":
+            value = getattr(token, attribute_name)
+            if attribute_name in ["n_lefts", "n_rights", "has_vector", "is_sent_start"]:
+                return value
+            else:
+                return ", ".join([v.text for v in value])
+        elif _type == "additional_attribute":
+            if attribute_name == "id":
+                return getattr(token, "i")
+            elif attribute_name == "start":
+                return getattr(token, "idx")
+            elif attribute_name == "end":
+                return getattr(token, "idx") + len(token)
+        elif _type == "custom_attributes":
+            return getattr(getattr(token, "_"), attribute_name)
+
+    def get_token_attribute_dict(self, doc, consistent_columns):
+        """
+        To get attribute dictionary for sequence of Token object in Doc
+        :param doc: Doc object
+        :param consistent_columns: name attributes required with its type
+        :return: python dictionary containing attributes names as keys
+                and list of all token values as value.
+        """
+        token_attribute_dictionary = {}
+        for token in doc:
+            for column_name in consistent_columns:
+                if column_name[0] in token_attribute_dictionary:
+                    token_attribute_dictionary[column_name[0]].append(
+                        self.get_token_attribute_value(
+                            token, column_name[0], column_name[1]
+                        )
+                    )
+                else:
+                    token_attribute_dictionary[column_name[0]] = []
+                    token_attribute_dictionary[column_name[0]].append(
+                        self.get_token_attribute_value(
+                            token, column_name[0], column_name[1]
+                        )
+                    )
+        return token_attribute_dictionary
 
     @staticmethod
-    def get_named_entity_details(doc):
+    def get_named_entity_dict(doc):
         """
         To get named entities from NLP processed text
         :param doc: spacy container for linguistic annotations.
@@ -61,68 +96,56 @@ class DframCy(object):
             entity_details_dict["ent_label"].append(ent.label_)
         return entity_details_dict
 
-    def to_dataframe(self, doc, columns=None, separate_entity_dframe=False):
+    def to_dataframe(
+        self, doc, columns=None, separate_entity_dframe=False, custom_attributes=None
+    ):
         """
         Convert Linguistic annotations for text into pandas dataframe
         :param doc: spacy container for linguistic annotations.
-        :param columns: list of str, name of columns to be included in dataframe (default: ["tokens.id", "tokens.text",
-        "tokens.start", "tokens.end", "tokens.pos", "tokens.tag", "tokens.dep", "tokens.head", "ents.start",
-        "ents.end", "ents.label"])
+        :param columns: list of str, name of columns to be included in dataframe (default: 
+        ["id", "text", "start", "end", "pos_", "tag_", "dep_", "head", "ent_type_"])
         :param separate_entity_dframe: bool, for separate entity dataframe (default: False)
+        :param custom_attributes: list, for custom attribute
         :return: dataframe, dataframe containing linguistic annotations
         """
-        if not columns:
+        if columns is None:
             columns = utils.get_default_columns()
-            additional_attributes = False
-        else:
-            columns, additional_attributes = utils.map_user_columns_names_with_default(columns)
 
-        if "tokens.id" not in columns:
-            columns.append("tokens.id")
+        if "id" not in columns:
+            columns = ["id"] + columns
 
-        json_doc = doc.to_json()
+        consistent_columns = utils.check_columns_consistency(columns)
 
-        if "ent" in ", ".join(columns):
-            json_doc = utils.merge_entity_details(json_doc)
+        if custom_attributes:
+            consistent_columns += [
+                (attr, "custom_attributes") for attr in custom_attributes
+            ]
 
-        if not json_doc["ents"]:
-            columns = [cn for cn in columns if "ents" not in cn]
+        token_attribute_dictionary = self.get_token_attribute_dict(
+            doc, consistent_columns
+        )
+        tokens_dataframe = pd.DataFrame.from_dict(token_attribute_dictionary)
 
-        merged_tokens_dict = merge_with(list, *json_doc["tokens"])
-        merged_tokens_dict["text"] = [json_doc["text"][token["start"]:token["end"]] for token in json_doc["tokens"]]
+        new_column_names_map = {i: "token_" + i for i in tokens_dataframe.columns}
 
-        if additional_attributes:
-            for column in columns:
-                if column.split(".")[-1] not in merged_tokens_dict:
-                    merged_tokens_dict[column.split(".")[-1]] = self.get_additional_token_attributes(
-                        utils.additional_attributes_map(column), doc
-                    )
+        tokens_dataframe.rename(columns=new_column_names_map, inplace=True)
 
-        if "tokens.start" in columns and "tokens.end" in columns:
-            if "ents.start" in columns:
-                columns.remove("ents.start")
-            if "ents.end" in columns:
-                columns.remove("ents.end")
+        tokens_dataframe.reindex(tokens_dataframe["token_id"])
 
-        columns_filtered_token_dict = {}
+        tokens_dataframe.drop(columns=["token_id"], inplace=True)
 
-        for key in merged_tokens_dict.keys():
-            if key in set([i.split(".")[-1] for i in columns]):
-                columns_filtered_token_dict["tokens_" + key] = merged_tokens_dict[key]
-
-        tokens_dataframe = pd.DataFrame.from_dict(columns_filtered_token_dict)
-
-        tokens_dataframe.reindex(tokens_dataframe["tokens_id"])
-
-        tokens_dataframe.drop(columns=["tokens_id"], inplace=True)
+        if not doc.ents and "token_ent_type_" in tokens_dataframe.columns:
+            tokens_dataframe.drop(columns=["token_ent_type_"], inplace=True)
 
         if separate_entity_dframe:
-            entity_dict = self.get_named_entity_details(doc)
+            entity_dict = self.get_named_entity_dict(doc)
             entity_dataframe = pd.DataFrame.from_dict(entity_dict)
-        else:
-            entity_dataframe = None
 
-        return tokens_dataframe if not separate_entity_dframe else (tokens_dataframe, entity_dataframe)
+        return (
+            tokens_dataframe
+            if not separate_entity_dframe
+            else (tokens_dataframe, entity_dataframe)
+        )
 
     def add_entity_ruler(self, patterns):
         """
