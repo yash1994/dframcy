@@ -3,6 +3,7 @@ from __future__ import unicode_literals
 
 import json
 import click
+import spacy
 from pathlib import Path
 from wasabi import Printer
 from io import open
@@ -32,7 +33,7 @@ def main():
     default="csv",
     show_default=True,
     type=str,
-    help="Output file format (JSON/CSV)",
+    help="Output file format (json/csv)",
 )
 @click.option(
     "--language_model",
@@ -70,8 +71,9 @@ def convert(
         output_file = output_file.joinpath(input_file.stem + "." + str(convert_type))
     if input_file.exists():
         with open(input_file, "r") as infile:
-            text = infile.read()
-            dframcy = DframCy(language_model)
+            text = infile.read().strip("\n").strip()
+            nlp = spacy.load(language_model)
+            dframcy = DframCy(nlp)
             doc = dframcy.nlp(text)
             if columns == DEFAULT_COLUMNS:
                 annotation_dataframe = dframcy.to_dataframe(

@@ -107,7 +107,7 @@ Dframcy supports command line arguments for conversion of plain text file to lin
 
 ```bash
 # convert
-dframcy convert -i plain_text.txt -o annotations.csv -t CSV
+dframcy convert -i plain_text.txt -o annotations.csv -t csv
 
 # train
 dframcy train -l en -o spacy_models -t train.csv -d test.csv

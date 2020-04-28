@@ -8,4 +8,4 @@ pytest-cov
 tox-travis
 pandas
 xlrd
-spacy==2.2.0
+spacy>=2.2.0
