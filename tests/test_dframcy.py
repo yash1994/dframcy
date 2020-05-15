@@ -150,8 +150,7 @@ def test_all_columns_thoroughly():
         ],
     )
 
-    assert dataframe.shape == (48, 62)
-    assert dataframe["token_ent_type_"][9] == "ORG"
+    assert dataframe.shape == (48, 61)
     assert dataframe["token_ancestors"][0] == "learning, is"
     assert (dataframe.token_is_lower).sum() == 41
     assert (~dataframe.token_is_lower).sum() == 7
